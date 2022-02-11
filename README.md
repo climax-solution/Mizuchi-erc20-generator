@@ -1,0 +1,1 @@
+# Mizuchi-erc20-generator
