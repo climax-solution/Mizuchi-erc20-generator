@@ -1,0 +1,19 @@
+html {
+    height: 100%;
+}
+
+body {
+    width: 100%;
+    height: 100%;
+    background-image: url(./bg.jpg);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+}
+
+.detail-box {
+    padding: 20px;
+}
+
+.mt-150 {
+    margin-top: 150px !important;
+}
