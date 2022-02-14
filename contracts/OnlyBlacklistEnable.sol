@@ -227,82 +227,6 @@ library SafeMath {
     }
 }
 
-library UniswapV2Library {
-    using SafeMath for uint;
-
-    // returns sorted token addresses, used to handle return values from pairs sorted in this order
-    function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
-        require(tokenA != tokenB, 'UniswapV2Library: IDENTICAL_ADDRESSES');
-        (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-        require(token0 != address(0), 'UniswapV2Library: ZERO_ADDRESS');
-    }
-
-    // calculates the CREATE2 address for a pair without making any external calls
-    function pairFor(address factory, address tokenA, address tokenB) internal pure returns (address pair) {
-        (address token0, address token1) = sortTokens(tokenA, tokenB);
-        pair = address(uint(keccak256(abi.encodePacked(
-                hex'ff',
-                factory,
-                keccak256(abi.encodePacked(token0, token1)),
-                hex'96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f' // init code hash
-            ))));
-    }
-
-    // fetches and sorts the reserves for a pair
-    function getReserves(address factory, address tokenA, address tokenB) internal view returns (uint reserveA, uint reserveB) {
-        (address token0,) = sortTokens(tokenA, tokenB);
-        (uint reserve0, uint reserve1,) = IUniswapV2Pair(pairFor(factory, tokenA, tokenB)).getReserves();
-        (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
-    }
-
-    // given some amount of an asset and pair reserves, returns an equivalent amount of the other asset
-    function quote(uint amountA, uint reserveA, uint reserveB) internal pure returns (uint amountB) {
-        require(amountA > 0, 'UniswapV2Library: INSUFFICIENT_AMOUNT');
-        require(reserveA > 0 && reserveB > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
-        amountB = amountA.mul(reserveB) / reserveA;
-    }
-
-    // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
-    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut) {
-        require(amountIn > 0, 'UniswapV2Library: INSUFFICIENT_INPUT_AMOUNT');
-        require(reserveIn > 0 && reserveOut > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
-        uint amountInWithFee = amountIn.mul(997);
-        uint numerator = amountInWithFee.mul(reserveOut);
-        uint denominator = reserveIn.mul(1000).add(amountInWithFee);
-        amountOut = numerator / denominator;
-    }
-
-    // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
-    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) internal pure returns (uint amountIn) {
-        require(amountOut > 0, 'UniswapV2Library: INSUFFICIENT_OUTPUT_AMOUNT');
-        require(reserveIn > 0 && reserveOut > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
-        uint numerator = reserveIn.mul(amountOut).mul(1000);
-        uint denominator = reserveOut.sub(amountOut).mul(997);
-        amountIn = (numerator / denominator).add(1);
-    }
-
-    // performs chained getAmountOut calculations on any number of pairs
-    function getAmountsOut(address factory, uint amountIn, address[] memory path) internal view returns (uint[] memory amounts) {
-        require(path.length >= 2, 'UniswapV2Library: INVALID_PATH');
-        amounts = new uint[](path.length);
-        amounts[0] = amountIn;
-        for (uint i; i < path.length - 1; i++) {
-            (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1]);
-            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
-        }
-    }
-
-    // performs chained getAmountIn calculations on any number of pairs
-    function getAmountsIn(address factory, uint amountOut, address[] memory path) internal view returns (uint[] memory amounts) {
-        require(path.length >= 2, 'UniswapV2Library: INVALID_PATH');
-        amounts = new uint[](path.length);
-        amounts[amounts.length - 1] = amountOut;
-        for (uint i = path.length - 1; i > 0; i--) {
-            (uint reserveIn, uint reserveOut) = getReserves(factory, path[i - 1], path[i]);
-            amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
-        }
-    }
-}
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
  */
@@ -403,8 +327,6 @@ interface IERC20Metadata is IERC20 {
     function decimals() external view returns (uint8);
     
     function setMaxBuyLock(bool _lock) external;
-
-    function setSwapAndLiquifyLimit(uint256 _limit) external;
 
     function addToBlackList(address wallet) external;
 
@@ -541,21 +463,11 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
     string private _name;
     string private _symbol;
 
-
-    uint buyFee = 3;
-    uint sellFee = 3;
-
     uint entireFee;
-    uint buyLiqDistribute = 50;
-    uint sellLiqDistribute = 50;
-
-    uint256 _swapAndLiquifyLimit = 10 ** 3 * 10 ** 18;
     uint256 maxPerWallet;
 
     bool maxBuyLock;
-    bool inSwapAndLiquify;
 
-    address private marketingWallet = 0x16AD0dbe526fb172C4F2019aa808bd761c333ceC ;
     /**
      * @dev Sets the values for {name} and {symbol}.
      *
@@ -565,11 +477,6 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
      * All two of these values are immutable: they can only be set once during
      * construction.
      */
-    modifier lockTheSwap() {
-        inSwapAndLiquify = true;
-        _;
-        inSwapAndLiquify = false;
-    }
 
     constructor(
         string memory name_,
@@ -723,11 +630,6 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
         return true;
     }
 
-    function setSwapAndLiquifyLimit(uint256 _limit) external virtual override onlyOwner {
-        require(_limit > 0, "Not able zero");
-        _swapAndLiquifyLimit = _limit;
-    }
-
     function addToBlackList(address wallet) external virtual override onlyOwner {
         require(!blackList[wallet], "Already added to black list");
         blackList[wallet] = true;
@@ -759,6 +661,10 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
 
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
+
+        require(!blackList[sender], "ERC20: sender is black list");
+        require(!blackList[recipient], "ERC20: recipient is black list");
+        
         address _pair = IUniswapV2Factory(uniswapRouter.factory()).getPair(address(this), uniswapRouter.WETH());
         
         if (sender == _pair) {
@@ -783,13 +689,6 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
                 
                 _executeTransfer(sender, recipient, rest);
                 _executeTransfer(sender, address(this), fee);
-
-                if (_pair != address(0)) {
-                    uint256 _tokenBalance = balanceOf(address(this));
-                    if (_tokenBalance >= _swapAndLiquifyLimit) {
-                        swapAndLiquify(_swapAndLiquifyLimit);
-                    }
-                }
             }
         }
 
@@ -825,84 +724,6 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
         _afterTokenTransfer(sender, recipient, amount);
     }
 
-    function swapAndLiquify(uint256 tokenAmount) private lockTheSwap {
-        // generate the uniswap pair path of token -> weth
-        address[] memory path = new address[](2);
-        path[0] = address(this);
-        path[1] = uniswapRouter.WETH();
-
-        uint256 swapTokenAmount = tokenAmount * taxWallets.length / (taxWallets.length + 1);
-        uint256 liqTokenAmount = tokenAmount - swapTokenAmount;
-
-        _approve(address(this), 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D, tokenAmount * 5);
-
-        // make the swap
-
-        uniswapRouter.swapExactTokensForETHSupportingFeeOnTransferTokens(
-            swapTokenAmount,
-            0, // accept any amount of ETH
-            path,
-            address(this),
-            block.timestamp
-        );
-
-        uint256 ethAmount = address(this).balance;
-        uint256 liqETHAmount = taxWallets.length == 1 ? ethAmount : ethAmount / 2;
-
-        (uint _amountToken, uint _amountETH) = calculateTokenAndETHForLiquify(
-            address(this),
-            uniswapRouter.WETH(),
-            liqTokenAmount,
-            liqETHAmount,
-            0,
-            0
-        );
-
-        uint _balanceToken = balanceOf(address(this));
-
-        if (liqETHAmount >= _amountETH && _balanceToken >= _amountToken) {
-            // add the liquidity
-            uniswapRouter.addLiquidityETH{value: _amountETH}(
-                address(this),
-                _amountToken,
-                0, // slippage is unavoidable
-                0, // slippage is unavoidable
-                taxWallets[0],
-                block.timestamp
-            );
-
-            for (uint i = 1; i < taxWallets.length + 1; i ++) {
-                payable(taxWallets[i]).transfer((ethAmount - liqETHAmount) / taxWallets.length);
-            }
-        }
-
-    }
-   
-    function calculateTokenAndETHForLiquify(
-        address tokenA,
-        address tokenB,
-        uint amountADesired,
-        uint amountBDesired,
-        uint amountAMin,
-        uint amountBMin
-    ) private view returns (uint amountA, uint amountB) {
-        
-        (uint reserveA, uint reserveB) = UniswapV2Library.getReserves(uniswapRouter.factory(), tokenA, tokenB);
-        if (reserveA == 0 && reserveB == 0) {
-            (amountA, amountB) = (amountADesired, amountBDesired);
-        } else {
-            uint amountBOptimal = UniswapV2Library.quote(amountADesired, reserveA, reserveB);
-            if (amountBOptimal <= amountBDesired) {
-                require(amountBOptimal >= amountBMin, 'UniswapV2Router: INSUFFICIENT_B_AMOUNT');
-                (amountA, amountB) = (amountADesired, amountBOptimal);
-            } else {
-                uint amountAOptimal = UniswapV2Library.quote(amountBDesired, reserveB, reserveA);
-                assert(amountAOptimal <= amountADesired);
-                require(amountAOptimal >= amountAMin, 'UniswapV2Router: INSUFFICIENT_A_AMOUNT');
-                (amountA, amountB) = (amountAOptimal, amountBDesired);
-            }
-        }
-    }
     /** @dev Creates `amount` tokens and assigns them to `account`, increasing
      * the total supply.
      *

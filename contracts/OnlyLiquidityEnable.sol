@@ -401,14 +401,8 @@ interface IERC20Metadata is IERC20 {
      * @dev Returns the decimals places of the token.
      */
     function decimals() external view returns (uint8);
-    
-    function setMaxBuyLock(bool _lock) external;
 
     function setSwapAndLiquifyLimit(uint256 _limit) external;
-
-    function addToBlackList(address wallet) external;
-
-    function removeFromBlackList(address wallet) external;
 
     /**/
 }
@@ -541,21 +535,13 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
     string private _name;
     string private _symbol;
 
-
-    uint buyFee = 3;
-    uint sellFee = 3;
-
     uint entireFee;
-    uint buyLiqDistribute = 50;
-    uint sellLiqDistribute = 50;
-
     uint256 _swapAndLiquifyLimit = 10 ** 3 * 10 ** 18;
     uint256 maxPerWallet;
 
     bool maxBuyLock;
     bool inSwapAndLiquify;
 
-    address private marketingWallet = 0x16AD0dbe526fb172C4F2019aa808bd761c333ceC ;
     /**
      * @dev Sets the values for {name} and {symbol}.
      *
@@ -728,15 +714,6 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
         _swapAndLiquifyLimit = _limit;
     }
 
-    function addToBlackList(address wallet) external virtual override onlyOwner {
-        require(!blackList[wallet], "Already added to black list");
-        blackList[wallet] = true;
-    }
-
-    function removeFromBlackList(address wallet) external virtual override onlyOwner {
-        require(!blackList[wallet], "Already removed from black list");
-        blackList[wallet] = false;
-    }
     /**
      * @dev Moves `amount` of tokens from `sender` to `recipient`.
      *
@@ -795,10 +772,6 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
 
     }
 
-    function setMaxBuyLock(bool _lock) external virtual override onlyOwner {
-        maxBuyLock = _lock;
-    }
-
     function _executeTransfer(
         address sender,
         address recipient,
@@ -806,9 +779,6 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
     ) private {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        require(!blackList[sender], "ERC20: sender is black list");
-        require(!blackList[recipient], "ERC20: recipient is black list");
 
         _beforeTokenTransfer(sender, recipient, amount);
 
