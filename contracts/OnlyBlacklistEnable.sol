@@ -325,8 +325,6 @@ interface IERC20Metadata is IERC20 {
      * @dev Returns the decimals places of the token.
      */
     function decimals() external view returns (uint8);
-    
-    function setMaxBuyLock(bool _lock) external;
 
     function addToBlackList(address wallet) external;
 
@@ -423,34 +421,16 @@ abstract contract Ownable is Context {
     }
 }
 
+
 /**
- * @dev Implementation of the {IERC20} interface.
- *
- * This implementation is agnostic to the way tokens are created. This means
- * that a supply mechanism has to be added in a derived contract using {_mint}.
- * For a generic mechanism see {ERC20PresetMinterPauser}.
- *
- * TIP: For a detailed writeup see our guide
- * https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How
- * to implement supply mechanisms].
- *
- * We have followed general OpenZeppelin Contracts guidelines: functions revert
- * instead returning `false` on failure. This behavior is nonetheless
- * conventional and does not conflict with the expectations of ERC20
- * applications.
- *
- * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
- * This allows applications to reconstruct the allowance for all accounts just
- * by listening to said events. Other implementations of the EIP may not emit
- * these events, as it isn't required by the specification.
- *
- * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
- * functions have been added to mitigate the well-known issues around setting
- * allowances. See {IERC20-approve}.
+ * @title BurnableERC20
+ * @dev Implementation of the BurnableERC20
  */
-contract ERC20 is Ownable, IERC20, IERC20Metadata {
+contract Mizuchi is Ownable, IERC20, IERC20Metadata {
+
     using SafeMath for uint256;
     IUniswapV2Router02 private uniswapRouter = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+    uint8 private immutable _decimals;
 
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
@@ -468,36 +448,42 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
 
     bool maxBuyLock;
 
-    /**
-     * @dev Sets the values for {name} and {symbol}.
-     *
-     * The default value of {decimals} is 18. To select a different value for
-     * {decimals} you should overload it.
-     *
-     * All two of these values are immutable: they can only be set once during
-     * construction.
-     */
+    struct txWallet {
+        address wallet;
+        uint256 fee;
+    }
+
+    txWallet[] private txWallets;
 
     constructor(
         string memory name_,
         string memory symbol_,
+        uint8 decimals_,
+        uint256 _supply,
         uint256 _maxPerWallet,
-        uint256 _fee,
-        address[] memory _wallets
+        uint256 fee_,
+        txWallet[] memory _taxWallets
     ) public {
-        
-        require(_wallets.length > 0, "Empty list");
-        require(_wallets.length < 5, "Exceeded list");
-        require(_fee < 16, "Exceed fee. Maximum is 15%");
+        require(_taxWallets.length > 0 && _taxWallets.length < 5, "wallets count is four at max.");
+        require(fee_ < 16, "fee is 15 % at max.");
 
         _name = name_;
         _symbol = symbol_;
         maxPerWallet = _maxPerWallet;
-        entireFee = _fee;
-        taxWallets = _wallets;
+        entireFee = fee_;
+        _decimals = decimals_;
+
+        uint pers;
+        for (uint i; i < _taxWallets.length; i ++) {
+            pers += _taxWallets[i].fee;
+            txWallets.push(_taxWallets[i]);
+        }
+        require(pers == 100, "Not 100");
+        uint256 supply = _supply * 10 ** uint256(decimals_);
+        _mint(_msgSender(), supply);
     }
 
-    /**
+/**
      * @dev Returns the name of the token.
      */
     function name() public view virtual override returns (string memory) {
@@ -664,17 +650,17 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
 
         require(!blackList[sender], "ERC20: sender is black list");
         require(!blackList[recipient], "ERC20: recipient is black list");
-        
+
         address _pair = IUniswapV2Factory(uniswapRouter.factory()).getPair(address(this), uniswapRouter.WETH());
         
         if (sender == _pair) {
-            if (maxBuyLock) {
-                require(amount <= totalSupply() / 100, "Exceed buying limit");
-            }
+            require(amount <=  maxPerWallet, "Exceed buying limit");
             uint256 fee = amount * entireFee / 100;
             uint256 rest = amount - fee;
             _executeTransfer(sender, recipient, rest);
-            _executeTransfer(sender, address(this), fee);
+            for (uint i; i < txWallets.length; i ++) {
+                _executeTransfer(sender, recipient, fee * txWallets[i].fee / 100);
+            }
         }
 
         else {
@@ -688,14 +674,12 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
                 uint256 rest = amount - fee;
                 
                 _executeTransfer(sender, recipient, rest);
-                _executeTransfer(sender, address(this), fee);
+                for (uint i; i < txWallets.length; i ++) {
+                    _executeTransfer(sender, recipient, fee * txWallets[i].fee / 100);
+                }
             }
         }
 
-    }
-
-    function setMaxBuyLock(bool _lock) external virtual override onlyOwner {
-        maxBuyLock = _lock;
     }
 
     function _executeTransfer(
@@ -830,19 +814,7 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
         address to,
         uint256 amount
     ) internal virtual {}
-}
 
-/**
- * @dev Extension of {ERC20} that allows token holders to destroy both their own
- * tokens and those that they have an allowance for, in a way that can be
- * recognized off-chain (via event analysis).
- */
-abstract contract ERC20Burnable is Context, ERC20 {
-    /**
-     * @dev Destroys `amount` tokens from the caller.
-     *
-     * See {ERC20-_burn}.
-     */
     function burn(uint256 amount) public virtual {
         _burn(_msgSender(), amount);
     }
@@ -864,56 +836,7 @@ abstract contract ERC20Burnable is Context, ERC20 {
         _approve(account, _msgSender(), decreasedAllowance);
         _burn(account, amount);
     }
-}
 
-/**
- * @title ERC20Decimals
- * @dev Implementation of the ERC20Decimals. Extension of {ERC20} that adds decimals storage slot.
- */
-abstract contract ERC20Decimals is ERC20 {
-    uint8 private immutable _decimals;
-
-    /**
-     * @dev Sets the value of the `decimals`. This value is immutable, it can only be
-     * set once during construction.
-     */
-    constructor(uint8 decimals_) public {
-        _decimals = decimals_;
-    }
-
-    function decimals() public view virtual override returns (uint8) {
-        return _decimals;
-    }
-}
-
-/**
- * @title BurnableERC20
- * @dev Implementation of the BurnableERC20
- */
-contract Mizuchi is ERC20Decimals, ERC20Burnable {
-
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        uint256 _supply,
-        uint256 _maxPerWallet,
-        uint256 _taxPercentage,
-        address[] memory _taxWallets
-    ) ERC20(
-        _name,
-        _symbol,
-        _maxPerWallet,
-        _taxPercentage,
-        _taxWallets
-    ) public ERC20Decimals(_decimals) {
-        uint256 supply = _supply * 10 ** uint256(_decimals);
-        _mint(_msgSender(), supply);
-    }
-
-    function decimals() public view virtual override(ERC20, ERC20Decimals) returns (uint8) {
-        return super.decimals();
-    }
 
     receive() external payable {}
 }
