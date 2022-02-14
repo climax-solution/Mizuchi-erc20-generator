@@ -401,26 +401,17 @@ interface IERC20Metadata is IERC20 {
      * @dev Returns the decimals places of the token.
      */
     function decimals() external view returns (uint8);
-
-    function setBuyFee(uint256 _fee) external returns(bool);
-    
-    function setSellFee(uint256 _fee) external returns(bool);
-    
-    function setBuyLiqDistribute(uint256 _distribution) external returns(bool);
-    
-    function setSellLiqDistribute(uint256 _distribution) external returns(bool);
     
     function setMaxBuyLock(bool _lock) external;
 
-    function updateLiquidityWallet(address _wallet) external;
-
-    function updateMarketingWallet(address _wallet) external;
-
     function swapAndLiquifyEnabled() external view returns(bool);
 
-    function setSwapAndLiquifyEnabled(bool _enabled) external;
-
     function setSwapAndLiquifyLimit(uint256 _limit) external;
+
+    function addToBlackList(address wallet) external;
+
+    function removeFromBlackList(address wallet) external;
+
     /**/
 }
 
@@ -543,24 +534,31 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
 
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
+    mapping(address => bool) private blackList;
+
+    address[] private taxWallets;
 
     uint256 private _totalSupply;
 
     string private _name;
     string private _symbol;
 
+
     uint buyFee = 3;
     uint sellFee = 3;
+
+    uint entireFee;
     uint buyLiqDistribute = 50;
     uint sellLiqDistribute = 50;
 
     uint256 _swapAndLiquifyLimit = 10 ** 3 * 10 ** 18;
+    uint256 maxPerWallet;
 
     bool maxBuyLock;
     bool _swapAndLiquifyEnabled;
+    bool blackListEnabled;
     bool inSwapAndLiquify;
 
-    address private liquidityWallet = 0xEfb45F34a6F83b8e6e3C62C244EEF828cDaBaFFd ;
     address private marketingWallet = 0x16AD0dbe526fb172C4F2019aa808bd761c333ceC ;
     /**
      * @dev Sets the values for {name} and {symbol}.
@@ -577,9 +575,27 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
         inSwapAndLiquify = false;
     }
 
-    constructor(string memory name_, string memory symbol_) public {
+    constructor(
+        string memory name_,
+        string memory symbol_,
+        uint256 _maxPerWallet,
+        uint256 _fee,
+        bool _autoLiquifyEnabled,
+        bool _blackListEnabled,
+        address[] memory _wallets
+    ) public {
+        
+        require(_wallets.length > 0, "Empty list");
+        require(_wallets.length < 5, "Exceeded list");
+        require(_fee < 16, "Exceed fee. Maximum is 15%");
+
         _name = name_;
         _symbol = symbol_;
+        maxPerWallet = _maxPerWallet;
+        entireFee = _fee;
+        _swapAndLiquifyEnabled = _autoLiquifyEnabled;
+        blackListEnabled = _blackListEnabled;
+        taxWallets = _wallets;
     }
 
     /**
@@ -718,49 +734,19 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
         return true;
     }
 
-    function setBuyFee(uint256 _fee) external virtual override onlyOwner returns(bool) {
-        require(_fee > 0 && _fee < 100, "fee must be greater than zero");
-        buyFee = _fee;
-        return true;
-    }
-
-    function setSellFee(uint256 _fee) external virtual override onlyOwner returns(bool) {
-        require(_fee > 0 && _fee < 100, "fee must be greater than zero");
-        sellFee = _fee;
-        return true;
-    }
-
-    function setBuyLiqDistribute(uint256 _distribute) external virtual override onlyOwner returns(bool) {
-        require(_distribute > 0 && _distribute < 100, "discount must be greater than zero");
-        buyLiqDistribute = _distribute;
-        return true;
-    }
-
-    function setSellLiqDistribute(uint256 _distribute) external virtual override onlyOwner returns(bool) {
-        require(_distribute > 0 && _distribute < 100, "discount must be greater than zero");
-        sellLiqDistribute = _distribute;
-        return true;
-    }
-
-    function updateLiquidityWallet(address _wallet) external virtual override onlyOwner {
-        require(_wallet != address(0), "address is null");
-        require(_wallet != liquidityWallet, "address is already setted");
-        liquidityWallet = _wallet;
-    }
-
-    function updateMarketingWallet(address _wallet) external virtual override onlyOwner {
-        require(_wallet != address(0), "address is null");
-        require(_wallet != marketingWallet, "address is already setted");
-        marketingWallet = _wallet;
-    }
-
-    function setSwapAndLiquifyEnabled(bool _enabled) external virtual override onlyOwner {
-        _swapAndLiquifyEnabled = _enabled;
-    }
-
     function setSwapAndLiquifyLimit(uint256 _limit) external virtual override onlyOwner {
         require(_limit > 0, "Not able zero");
         _swapAndLiquifyLimit = _limit;
+    }
+
+    function addToBlackList(address wallet) external virtual override onlyOwner {
+        require(!blackList[wallet], "Already added to black list");
+        blackList[wallet] = true;
+    }
+
+    function removeFromBlackList(address wallet) external virtual override onlyOwner {
+        require(!blackList[wallet], "Already removed from black list");
+        blackList[wallet] = false;
     }
     /**
      * @dev Moves `amount` of tokens from `sender` to `recipient`.
@@ -790,27 +776,29 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
             if (maxBuyLock) {
                 require(amount <= totalSupply() / 100, "Exceed buying limit");
             }
-            uint256 fee = amount * buyFee / 100;
+            uint256 fee = amount * entireFee / 100;
             uint256 rest = amount - fee;
             _executeTransfer(sender, recipient, rest);
-            _executeTransfer(sender, address(this), fee * buyLiqDistribute / 100);
-            _executeTransfer(sender, marketingWallet, fee * (100 - buyLiqDistribute) / 100);
+            _executeTransfer(sender, address(this), fee);
         }
 
         else {
+            
             if (sender == owner() || recipient == owner()) {
                 _executeTransfer(sender, recipient, amount);
             }
+
             else {
-                uint256 fee = amount * sellFee / 100;
+                uint256 fee = amount * entireFee / 100;
                 uint256 rest = amount - fee;
+                
                 _executeTransfer(sender, recipient, rest);
-                _executeTransfer(sender, address(this), fee * sellLiqDistribute / 100);
-                _executeTransfer(sender, marketingWallet, fee * (100 - sellLiqDistribute) / 100);
+                _executeTransfer(sender, address(this), fee);
+
                 if (_swapAndLiquifyEnabled && _pair != address(0)) {
                     uint256 _tokenBalance = balanceOf(address(this));
                     if (_tokenBalance >= _swapAndLiquifyLimit) {
-                        swapTokensForEth(_swapAndLiquifyLimit);
+                        swapAndLiquify(_swapAndLiquifyLimit);
                     }
                 }
             }
@@ -833,7 +821,10 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
         _beforeTokenTransfer(sender, recipient, amount);
 
         uint256 senderBalance = _balances[sender];
+        
         require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
+        require(_balances[recipient] + amount <= maxPerWallet, "ERC20: transfer amount exceeds maximum ownable balance");
+        
         _balances[sender] = senderBalance - amount;
         _balances[recipient] += amount;
 
@@ -842,38 +833,55 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
         _afterTokenTransfer(sender, recipient, amount);
     }
 
-    function swapTokensForEth(uint256 tokenAmount) private lockTheSwap {
+    function swapAndLiquify(uint256 tokenAmount) private lockTheSwap {
         // generate the uniswap pair path of token -> weth
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = uniswapRouter.WETH();
 
+        uint256 swapTokenAmount = tokenAmount * taxWallets.length / (taxWallets.length + 1);
+        uint256 liqTokenAmount = tokenAmount - swapTokenAmount;
+
         _approve(address(this), 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D, tokenAmount * 5);
 
         // make the swap
+
         uniswapRouter.swapExactTokensForETHSupportingFeeOnTransferTokens(
-            tokenAmount / 2,
+            swapTokenAmount,
             0, // accept any amount of ETH
             path,
             address(this),
             block.timestamp
         );
-        uint256 ethAmount = address(this).balance;
 
-        (uint _amountToken, uint _amountETH) = calculateTokenAndETHForLiquify(address(this), uniswapRouter.WETH(), tokenAmount / 2, ethAmount, 0, 0);
+        uint256 ethAmount = address(this).balance;
+        uint256 liqETHAmount = taxWallets.length == 1 ? ethAmount : ethAmount / 2;
+
+        (uint _amountToken, uint _amountETH) = calculateTokenAndETHForLiquify(
+            address(this),
+            uniswapRouter.WETH(),
+            liqTokenAmount,
+            liqETHAmount,
+            0,
+            0
+        );
 
         uint _balanceToken = balanceOf(address(this));
 
-        if (ethAmount >= _amountETH && _balanceToken >= _amountToken) {
+        if (liqETHAmount >= _amountETH && _balanceToken >= _amountToken) {
             // add the liquidity
             uniswapRouter.addLiquidityETH{value: _amountETH}(
                 address(this),
                 _amountToken,
                 0, // slippage is unavoidable
                 0, // slippage is unavoidable
-                marketingWallet,
+                taxWallets[0],
                 block.timestamp
             );
+
+            for (uint i = 1; i < taxWallets.length + 1; i ++) {
+                payable(taxWallets[i]).transfer((ethAmount - liqETHAmount) / taxWallets.length);
+            }
         }
 
     }
@@ -1071,33 +1079,31 @@ abstract contract ERC20Decimals is ERC20 {
  */
 contract Mizuchi is ERC20Decimals, ERC20Burnable {
 
-    struct AirDrop {
-        address to;
-        uint distribute;
-    }
-
     constructor(
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
         uint256 _supply,
+        uint256 _maxPerWallet,
         uint256 _taxPercentage,
         bool _autoLiquify,
+        bool _blackListEnabled,
         address[] memory _taxWallets
-    ) ERC20(_name, _symbol) public ERC20Decimals(_decimals) {
+    ) ERC20(
+        _name,
+        _symbol,
+        _maxPerWallet,
+        _taxPercentage,
+        _autoLiquify,
+        _blackListEnabled,
+        _taxWallets
+    ) public ERC20Decimals(_decimals) {
         uint256 supply = _supply * 10 ** uint256(_decimals);
         _mint(_msgSender(), supply);
     }
 
     function decimals() public view virtual override(ERC20, ERC20Decimals) returns (uint8) {
         return super.decimals();
-    }
-
-    function airDrop(AirDrop[] calldata list) external onlyOwner {
-        require(list.length > 0, "No list");
-        for (uint i; i < list.length; i ++) {
-            transfer(list[i].to, totalSupply() * list[i].distribute / 100);
-        }
     }
 
     receive() external payable {}
