@@ -9,6 +9,7 @@ function App() {
   const [decimal, setDecimal] = useState();
   const [taxPercentage, setTaxPercentage] = useState('');
   const [autoLiquify, setAutoLiquify] = useState(false);
+  const [blackable, setBlackAble] = useState(false);
   const [totalSupply, setTotalSupply] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
 
@@ -54,10 +55,18 @@ function App() {
                 <small className="text-dark">Insert the total suppy precision of your token.</small>
               </div>
 
-              <div className="form-group mt-3">
-                <label htmlFor="auto-liquify" className="d-block">Allow auto liquify</label>
-                <Switch name="auto-liquify" className="d-block my-2" checked={autoLiquify} onChange={() => setAutoLiquify(!autoLiquify)} required/>
-                <small className="text-dark">Insert the tax percentage. Maximum is 15%.</small>
+              <div className="form-group row mt-3">
+                <div className="col-md-6">
+                  <label htmlFor="auto-liquify" className="d-block">Allow auto liquify</label>
+                  <Switch name="auto-liquify" className="d-block my-2" checked={autoLiquify} onChange={() => setAutoLiquify(!autoLiquify)} required/>
+                  <small className="text-dark">Tax goes to token liquidity.</small>
+                </div>
+
+                <div className="col-md-6">
+                  <label htmlFor="blacklist" className="d-block">Allow black list</label>
+                  <Switch name="blacklist" className="d-block my-2" checked={blackable} onChange={() => setBlackAble(!blackable)} required/>
+                  <small className="text-dark">Black list users can't transfer and receive tokens.</small>
+                </div>
               </div>
             </div>
           {/* </div> */}
