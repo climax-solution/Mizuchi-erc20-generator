@@ -10,6 +10,7 @@ function App() {
   const [taxPercentage, setTaxPercentage] = useState('');
   const [autoLiquify, setAutoLiquify] = useState(false);
   const [totalSupply, setTotalSupply] = useState('');
+  const [maxAmount, setMaxAmount] = useState('');
 
   const [taxWallet1, setTaxWallet1] = useState('');
   const [taxWallet2, setTaxWallet2] = useState('');
@@ -40,12 +41,19 @@ function App() {
                 <input type="number" className="form-control" name="decimals" value={decimal} onChange={(e) => setDecimal(e.target.value)} required/>
                 <small className="text-dark">Insert the decimal precision of your token. If you don't know what to insert, use 18.</small>
               </div>
+
               <div className="form-group mt-3">
-                <label htmlFor="suppy">Total Supply</label>
-                <input type="number" className="form-control" name="suppy" value={totalSupply} onChange={(e) => setTotalSupply(e.target.value)} required/>
+                <label htmlFor="supply">Total Supply</label>
+                <input type="number" className="form-control" name="supply" value={totalSupply} onChange={(e) => setTotalSupply(e.target.value)} required/>
                 <small className="text-dark">Insert the total suppy precision of your token.</small>
               </div>
-              
+
+              <div className="form-group mt-3">
+                <label htmlFor="maxAmount">Max amount for wallet</label>
+                <input type="number" className="form-control" name="maxAmount" value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)} required/>
+                <small className="text-dark">Insert the total suppy precision of your token.</small>
+              </div>
+
               <div className="form-group mt-3">
                 <label htmlFor="auto-liquify" className="d-block">Allow auto liquify</label>
                 <Switch name="auto-liquify" className="d-block my-2" checked={autoLiquify} onChange={() => setAutoLiquify(!autoLiquify)} required/>
