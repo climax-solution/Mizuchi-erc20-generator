@@ -466,10 +466,12 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
     ) public {
         require(_taxWallets.length > 0 && _taxWallets.length < 5, "wallets count is four at max.");
         require(fee_ < 16, "fee is 15 % at max.");
+        require(decimals_ % 3 == 0 && decimals_ <= 18, "Not valid decimals");
+        require(_supply >= _maxPerWallet, "max per wallet must be under supply.");
 
         _name = name_;
         _symbol = symbol_;
-        maxPerWallet = _maxPerWallet;
+        maxPerWallet = _maxPerWallet * 10 ** uint256(decimals_);
         entireFee = fee_;
         _decimals = decimals_;
 
@@ -512,7 +514,7 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
     function decimals() public view virtual override returns (uint8) {
-        return 18;
+        return _decimals;
     }
 
     /**
