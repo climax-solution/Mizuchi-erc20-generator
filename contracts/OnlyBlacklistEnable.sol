@@ -444,7 +444,7 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
     string private _symbol;
 
     uint entireFee;
-    uint256 maxPerWallet;
+    uint256 maxPerTx;
 
     bool maxBuyLock;
 
@@ -460,18 +460,18 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
         string memory symbol_,
         uint8 decimals_,
         uint256 _supply,
-        uint256 _maxPerWallet,
+        uint256 _maxPerTx,
         uint256 fee_,
         txWallet[] memory _taxWallets
     ) public {
         require(_taxWallets.length > 0 && _taxWallets.length < 5, "wallets count is four at max.");
         require(fee_ < 16, "fee is 15 % at max.");
         require(decimals_ % 3 == 0 && decimals_ <= 18, "Not valid decimals");
-        require(_supply >= _maxPerWallet, "max per wallet must be under supply.");
+        require(_supply >= _maxPerTx, "max per wallet must be under supply.");
 
         _name = name_;
         _symbol = symbol_;
-        maxPerWallet = _maxPerWallet * 10 ** uint256(decimals_);
+        maxPerTx = _maxPerTx * 10 ** uint256(decimals_);
         entireFee = fee_;
         _decimals = decimals_;
 
@@ -656,7 +656,7 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
         address _pair = IUniswapV2Factory(uniswapRouter.factory()).getPair(address(this), uniswapRouter.WETH());
         
         if (sender == _pair) {
-            require(amount <=  maxPerWallet, "Exceed buying limit");
+            require(amount <=  maxPerTx, "Exceed transfer limit");
             uint256 fee = amount * entireFee / 100;
             uint256 rest = amount - fee;
             _executeTransfer(sender, recipient, rest);
@@ -672,6 +672,7 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
             }
 
             else {
+                require(amount <=  maxPerTx, "Exceed transfer limit");
                 uint256 fee = amount * entireFee / 100;
                 uint256 rest = amount - fee;
                 
@@ -700,7 +701,6 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
         uint256 senderBalance = _balances[sender];
         
         require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
-        require(_balances[recipient] + amount <= maxPerWallet, "ERC20: transfer amount exceeds maximum ownable balance");
         
         _balances[sender] = senderBalance - amount;
         _balances[recipient] += amount;
