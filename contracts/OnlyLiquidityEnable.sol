@@ -542,6 +542,7 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
         
         _name = name_;
         _symbol = symbol_;
+
         maxPerWallet = _maxPerWallet;
         liqFeeOfTax = _liqFeeOfTax;
         entireFee = _taxPercentage;
@@ -734,18 +735,10 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
         }
 
         uint256 fee = amount * entireFee / 100;
-        uint256 restTotal = amount - fee;
-        uint256 liqFee = fee * liqFeeOfTax / 100;
-        uint256 restFee = fee - liqFee;
+        uint256 rest = amount - fee;
 
-        _executeTransfer(sender, recipient, restTotal);
-        _executeTransfer(sender, address(this), liqFeeOfTax);
-
-        if (restFee > 0) {
-            for (uint i; i < taxWallets.length; i ++) {
-                _executeTransfer(sender, address(this), restFee / taxWallets.length);
-            }
-        }
+        _executeTransfer(sender, recipient, rest);
+        _executeTransfer(sender, address(this), fee);
 
     }
 
@@ -778,12 +771,10 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
         path[0] = address(this);
         path[1] = uniswapRouter.WETH();
 
-        uint256 swapTokenAmount = tokenAmount * taxWallets.length / (taxWallets.length + 1);
-        uint256 liqTokenAmount = tokenAmount - swapTokenAmount;
+        uint256 liqTokenAmount = tokenAmount * (liqFeeOfTax / 2) / 100;
+        uint256 swapTokenAmount = tokenAmount - liqTokenAmount;
 
-        _approve(address(this), 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D, tokenAmount * 5);
-
-        // make the swap
+        _approve(address(this), 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D, tokenAmount);
 
         uniswapRouter.swapExactTokensForETHSupportingFeeOnTransferTokens(
             swapTokenAmount,
@@ -794,7 +785,7 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
         );
 
         uint256 ethAmount = address(this).balance;
-        uint256 liqETHAmount = taxWallets.length == 1 ? ethAmount : ethAmount / 2;
+        uint256 liqETHAmount = ethAmount * (liqFeeOfTax / 2) / (100 - (liqFeeOfTax / 2));
 
         (uint _amountToken, uint _amountETH) = calculateTokenAndETHForLiquify(
             address(this),
@@ -805,9 +796,7 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
             0
         );
 
-        uint _balanceToken = balanceOf(address(this));
-
-        if (liqETHAmount >= _amountETH && _balanceToken >= _amountToken) {
+        if (liqETHAmount >= _amountETH && liqTokenAmount >= _amountToken) {
             // add the liquidity
             uniswapRouter.addLiquidityETH{value: _amountETH}(
                 address(this),
@@ -818,7 +807,7 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
                 block.timestamp
             );
 
-            for (uint i = 1; i < taxWallets.length + 1; i ++) {
+            for (uint i; i < taxWallets.length + 1; i ++) {
                 payable(taxWallets[i].wallet).transfer((ethAmount - liqETHAmount) * taxWallets[i].div / 100);
             }
         }
