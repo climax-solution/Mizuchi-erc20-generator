@@ -1,11 +1,3 @@
-/**
- *Submitted for verification at Etherscan.io on 2022-02-07
-*/
-
-/**
- *Submitted for verification at Etherscan.io on 2022-01-25
-*/
-
 // SPDX-License-Identifier: MIT
 
 pragma solidity >= 0.6.0 <0.8.0;
@@ -401,9 +393,6 @@ interface IERC20Metadata is IERC20 {
      * @dev Returns the decimals places of the token.
      */
     function decimals() external view returns (uint8);
-
-    function setSwapAndLiquifyLimit(uint256 _limit) external;
-
     /**/
 }
 
@@ -495,53 +484,33 @@ abstract contract Ownable is Context {
     }
 }
 
-/**
- * @dev Implementation of the {IERC20} interface.
- *
- * This implementation is agnostic to the way tokens are created. This means
- * that a supply mechanism has to be added in a derived contract using {_mint}.
- * For a generic mechanism see {ERC20PresetMinterPauser}.
- *
- * TIP: For a detailed writeup see our guide
- * https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How
- * to implement supply mechanisms].
- *
- * We have followed general OpenZeppelin Contracts guidelines: functions revert
- * instead returning `false` on failure. This behavior is nonetheless
- * conventional and does not conflict with the expectations of ERC20
- * applications.
- *
- * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
- * This allows applications to reconstruct the allowance for all accounts just
- * by listening to said events. Other implementations of the EIP may not emit
- * these events, as it isn't required by the specification.
- *
- * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
- * functions have been added to mitigate the well-known issues around setting
- * allowances. See {IERC20-approve}.
- */
-contract ERC20 is Ownable, IERC20, IERC20Metadata {
+contract Mizuchi is Ownable, IERC20, IERC20Metadata {
     using SafeMath for uint256;
     IUniswapV2Router02 private uniswapRouter = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
 
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
-    mapping(address => bool) private blackList;
-
-    address[] private taxWallets;
 
     uint256 private _totalSupply;
+    uint8 private immutable _decimals;
 
     string private _name;
     string private _symbol;
 
     uint entireFee;
-    uint256 _swapAndLiquifyLimit = 10 ** 3 * 10 ** 18;
-    uint256 maxPerWallet;
+    uint256 private _swapAndLiquifyLimit;
+    uint256 private maxPerWallet;
+    uint256 private liqFeeOfTax;
 
     bool maxBuyLock;
     bool inSwapAndLiquify;
 
+    struct feeWallet {
+        address wallet;
+        uint256 div;
+    }
+
+    feeWallet[] private taxWallets;
     /**
      * @dev Sets the values for {name} and {symbol}.
      *
@@ -560,23 +529,37 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
     constructor(
         string memory name_,
         string memory symbol_,
+        uint8 decimals_,
+        uint256 _supply,
         uint256 _maxPerWallet,
-        uint256 _fee,
-        address[] memory _wallets
+        uint256 _taxPercentage,
+        uint256 _liqFeeOfTax,
+        feeWallet[] memory _taxWallets
     ) public {
+        _decimals = decimals_;
+        require(_taxWallets.length < 5, "Exceeded list");
+        require(_taxPercentage < 16, "Exceed fee. Maximum is 15%");
         
-        require(_wallets.length > 0, "Empty list");
-        require(_wallets.length < 5, "Exceeded list");
-        require(_fee < 16, "Exceed fee. Maximum is 15%");
-
         _name = name_;
         _symbol = symbol_;
         maxPerWallet = _maxPerWallet;
-        entireFee = _fee;
-        taxWallets = _wallets;
+        liqFeeOfTax = _liqFeeOfTax;
+        entireFee = _taxPercentage;
+
+        uint256 checkFee;
+        for (uint i; i < _taxWallets.length ; i ++) {
+            checkFee += _taxWallets[i].div;
+            taxWallets.push(_taxWallets[i]);
+        }
+
+        require(checkFee == 100, "Not valid total fee");
+
+        uint256 supply = _supply * 10 ** uint256(decimals_);
+        _mint(_msgSender(), supply);
+        _swapAndLiquifyLimit = supply / 1000; // swap limit 0.1%
     }
 
-    /**
+/**
      * @dev Returns the name of the token.
      */
     function name() public view virtual override returns (string memory) {
@@ -605,7 +588,7 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
     function decimals() public view virtual override returns (uint8) {
-        return 18;
+        return _decimals;
     }
 
     /**
@@ -709,11 +692,6 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
         return true;
     }
 
-    function setSwapAndLiquifyLimit(uint256 _limit) external virtual override onlyOwner {
-        require(_limit > 0, "Not able zero");
-        _swapAndLiquifyLimit = _limit;
-    }
-
     /**
      * @dev Moves `amount` of tokens from `sender` to `recipient`.
      *
@@ -736,37 +714,36 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
 
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
+        require(amount <= maxPerWallet, "Exceed buying limit");
+
         address _pair = IUniswapV2Factory(uniswapRouter.factory()).getPair(address(this), uniswapRouter.WETH());
         
-        if (sender == _pair) {
-            if (maxBuyLock) {
-                require(amount <= totalSupply() / 100, "Exceed buying limit");
-            }
-            uint256 fee = amount * entireFee / 100;
-            uint256 rest = amount - fee;
-            _executeTransfer(sender, recipient, rest);
-            _executeTransfer(sender, address(this), fee);
-        }
-
-        else {
-            
+        if (sender != _pair) {
             if (sender == owner() || recipient == owner()) {
                 _executeTransfer(sender, recipient, amount);
             }
 
             else {
-                uint256 fee = amount * entireFee / 100;
-                uint256 rest = amount - fee;
-                
-                _executeTransfer(sender, recipient, rest);
-                _executeTransfer(sender, address(this), fee);
-
                 if (_pair != address(0)) {
                     uint256 _tokenBalance = balanceOf(address(this));
                     if (_tokenBalance >= _swapAndLiquifyLimit) {
                         swapAndLiquify(_swapAndLiquifyLimit);
                     }
                 }
+            }
+        }
+
+        uint256 fee = amount * entireFee / 100;
+        uint256 restTotal = amount - fee;
+        uint256 liqFee = fee * liqFeeOfTax / 100;
+        uint256 restFee = fee - liqFee;
+
+        _executeTransfer(sender, recipient, restTotal);
+        _executeTransfer(sender, address(this), liqFeeOfTax);
+
+        if (restFee > 0) {
+            for (uint i; i < taxWallets.length; i ++) {
+                _executeTransfer(sender, address(this), restFee / taxWallets.length);
             }
         }
 
@@ -837,12 +814,12 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
                 _amountToken,
                 0, // slippage is unavoidable
                 0, // slippage is unavoidable
-                taxWallets[0],
+                owner(),
                 block.timestamp
             );
 
             for (uint i = 1; i < taxWallets.length + 1; i ++) {
-                payable(taxWallets[i]).transfer((ethAmount - liqETHAmount) / taxWallets.length);
+                payable(taxWallets[i].wallet).transfer((ethAmount - liqETHAmount) * taxWallets[i].div / 100);
             }
         }
 
@@ -979,19 +956,9 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
         address to,
         uint256 amount
     ) internal virtual {}
-}
 
-/**
- * @dev Extension of {ERC20} that allows token holders to destroy both their own
- * tokens and those that they have an allowance for, in a way that can be
- * recognized off-chain (via event analysis).
- */
-abstract contract ERC20Burnable is Context, ERC20 {
-    /**
-     * @dev Destroys `amount` tokens from the caller.
-     *
-     * See {ERC20-_burn}.
-     */
+    receive() external payable {}
+
     function burn(uint256 amount) public virtual {
         _burn(_msgSender(), amount);
     }
@@ -1013,56 +980,4 @@ abstract contract ERC20Burnable is Context, ERC20 {
         _approve(account, _msgSender(), decreasedAllowance);
         _burn(account, amount);
     }
-}
-
-/**
- * @title ERC20Decimals
- * @dev Implementation of the ERC20Decimals. Extension of {ERC20} that adds decimals storage slot.
- */
-abstract contract ERC20Decimals is ERC20 {
-    uint8 private immutable _decimals;
-
-    /**
-     * @dev Sets the value of the `decimals`. This value is immutable, it can only be
-     * set once during construction.
-     */
-    constructor(uint8 decimals_) public {
-        _decimals = decimals_;
-    }
-
-    function decimals() public view virtual override returns (uint8) {
-        return _decimals;
-    }
-}
-
-/**
- * @title BurnableERC20
- * @dev Implementation of the BurnableERC20
- */
-contract Mizuchi is ERC20Decimals, ERC20Burnable {
-
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        uint256 _supply,
-        uint256 _maxPerWallet,
-        uint256 _taxPercentage,
-        address[] memory _taxWallets
-    ) ERC20(
-        _name,
-        _symbol,
-        _maxPerWallet,
-        _taxPercentage,
-        _taxWallets
-    ) public ERC20Decimals(_decimals) {
-        uint256 supply = _supply * 10 ** uint256(_decimals);
-        _mint(_msgSender(), supply);
-    }
-
-    function decimals() public view virtual override(ERC20, ERC20Decimals) returns (uint8) {
-        return super.decimals();
-    }
-
-    receive() external payable {}
 }
