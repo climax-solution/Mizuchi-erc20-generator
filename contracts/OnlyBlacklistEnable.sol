@@ -1,11 +1,3 @@
-/**
- *Submitted for verification at Etherscan.io on 2022-02-07
-*/
-
-/**
- *Submitted for verification at Etherscan.io on 2022-01-25
-*/
-
 // SPDX-License-Identifier: MIT
 
 pragma solidity >= 0.6.0 <0.8.0;
@@ -430,30 +422,35 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
 
     using SafeMath for uint256;
     IUniswapV2Router02 private uniswapRouter = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
-    uint8 private immutable _decimals;
 
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
     mapping(address => bool) private blackList;
 
-    address[] private taxWallets;
-
     uint256 private _totalSupply;
+    uint8 private immutable _decimals;
 
     string private _name;
     string private _symbol;
 
     uint entireFee;
     uint256 maxPerTx;
+    uint256 swapLimit;
 
-    bool maxBuyLock;
+    bool inSwapAndLiquify;
 
     struct txWallet {
         address wallet;
-        uint256 fee;
+        uint256 div;
     }
 
-    txWallet[] private txWallets;
+    txWallet[] private taxWallets;
+
+    modifier lockTheSwap() {
+        inSwapAndLiquify = true;
+        _;
+        inSwapAndLiquify = false;
+    }
 
     constructor(
         string memory name_,
@@ -477,12 +474,16 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
 
         uint pers;
         for (uint i; i < _taxWallets.length; i ++) {
-            pers += _taxWallets[i].fee;
-            txWallets.push(_taxWallets[i]);
+            pers += _taxWallets[i].div;
+            taxWallets.push(_taxWallets[i]);
         }
+
         require(pers == 100, "Not 100");
+        
         uint256 supply = _supply * 10 ** uint256(decimals_);
         _mint(_msgSender(), supply);
+
+        swapLimit = supply / 1000;
     }
 
 /**
@@ -655,34 +656,42 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
 
         address _pair = IUniswapV2Factory(uniswapRouter.factory()).getPair(address(this), uniswapRouter.WETH());
         
-        if (sender == _pair) {
-            require(amount <=  maxPerTx, "Exceed transfer limit");
-            uint256 fee = amount * entireFee / 100;
-            uint256 rest = amount - fee;
-            _executeTransfer(sender, recipient, rest);
-            for (uint i; i < txWallets.length; i ++) {
-                _executeTransfer(sender, recipient, fee * txWallets[i].fee / 100);
-            }
+        if (sender == owner() || recipient == owner()) {
+            _executeTransfer(sender, recipient, amount);
         }
 
         else {
-            
-            if (sender == owner() || recipient == owner()) {
-                _executeTransfer(sender, recipient, amount);
-            }
+            uint256 fee = amount * entireFee / 100;
+            uint256 rest = amount - fee;
+            uint256 initTokenBalance = balanceOf(address(this));
 
-            else {
-                require(amount <=  maxPerTx, "Exceed transfer limit");
-                uint256 fee = amount * entireFee / 100;
-                uint256 rest = amount - fee;
-                
-                _executeTransfer(sender, recipient, rest);
-                for (uint i; i < txWallets.length; i ++) {
-                    _executeTransfer(sender, recipient, fee * txWallets[i].fee / 100);
+            _executeTransfer(sender, recipient, rest);
+            _executeTransfer(sender, address(this), fee);
+            
+            if (sender != _pair && _pair != address(0) && initTokenBalance > swapLimit) {
+                swapTokensForETH(swapLimit);
+                uint256 initBalance = address(this).balance;
+
+                for (uint i; i < taxWallets.length; i ++) {
+                    payable(taxWallets[i].wallet).transfer(initBalance * taxWallets[i].div / 100);
                 }
             }
         }
 
+    }
+
+    function swapTokensForETH (uint256 amount) private lockTheSwap {
+        address[] memory path = new address[](2);
+        path[0] = address(this);
+        path[1] = uniswapRouter.WETH();
+        _approve(address(this), 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D, amount);
+        uniswapRouter.swapExactTokensForETHSupportingFeeOnTransferTokens(
+            amount,
+            0, // accept any amount of ETH
+            path,
+            address(this),
+            block.timestamp
+        );
     }
 
     function _executeTransfer(

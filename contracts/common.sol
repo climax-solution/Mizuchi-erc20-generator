@@ -642,7 +642,6 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
     ) private {
 
         require(sender != address(0), "ERC20: transfer from the zero address");
-        require(amount <=  maxPerTx, "Exceed transfer limit");
         require(recipient != address(0), "ERC20: transfer to the zero address");
 
         address _pair = IUniswapV2Factory(uniswapRouter.factory()).getPair(address(this), uniswapRouter.WETH());
@@ -652,6 +651,7 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
         }
 
         else {
+            require(amount <=  maxPerTx, "Exceed transfer limit");
             uint256 fee = amount * entireFee / 100;
             uint256 rest = amount - fee;
             uint256 initTokenBalance = balanceOf(address(this));
