@@ -12,12 +12,18 @@ function App() {
   const [blackable, setBlackAble] = useState(false);
   const [totalSupply, setTotalSupply] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
+  const [liqDiv, setLiqDiv] = useState('');
 
   const [taxWallet1, setTaxWallet1] = useState('');
   const [taxWallet2, setTaxWallet2] = useState('');
   const [taxWallet3, setTaxWallet3] = useState('');
   const [taxWallet4, setTaxWallet4] = useState('');
 
+  const [division1, setDivision1] = useState('');
+  const [division2, setDivision2] = useState('');
+  const [division3, setDivision3] = useState('');
+  const [division4, setDivision4] = useState('');
+  
   return (
     <div className="App">
       <div className="container">
@@ -59,6 +65,9 @@ function App() {
                 <div className="col-md-6">
                   <label htmlFor="auto-liquify" className="d-block">Allow auto liquify</label>
                   <Switch name="auto-liquify" className="d-block my-2" checked={autoLiquify} onChange={() => setAutoLiquify(!autoLiquify)} required/>
+                  { autoLiquify &&
+                    <input type="number" className="form-control w-50" value={liqDiv} onChange={(e) => setLiqDiv(e.target.value)}/>
+                  }
                   <small className="text-dark">Tax goes to token liquidity.</small>
                 </div>
 
@@ -79,10 +88,26 @@ function App() {
               </div>
               <div className="form-group mt-3">
                 <label htmlFor="wallet">Wallets</label>
-                <input type="text" className="form-control mt-3" name="wallet-1" value={taxWallet1} onChange={(e) => setTaxWallet1(e.target.value)} required/>
-                <input type="text" className="form-control mt-3" name="wallet-2" value={taxWallet2} onChange={(e) => setTaxWallet2(e.target.value)} required/>
-                <input type="text" className="form-control mt-3" name="wallet-3" value={taxWallet3} onChange={(e) => setTaxWallet3(e.target.value)} required/>
-                <input type="text" className="form-control mt-3" name="wallet-4" value={taxWallet4} onChange={(e) => setTaxWallet4(e.target.value)} required/>
+                <div className="group-title d-flex justify-content-between mt-3">
+                  <span>Address</span>
+                  <span className="me-2">Division</span>
+                </div>
+                <div className="wallet-input-group d-flex">
+                  <input type="text" className="form-control" name="wallet-1" value={taxWallet1} onChange={(e) => setTaxWallet1(e.target.value)} required/>
+                  <input type="text" className="form-control" name="divison-1" value={division1} onChange={(e) => setDivision1(e.target.value)} required/>
+                </div>
+                <div className="wallet-input-group d-flex mt-3">
+                  <input type="text" className="form-control" name="wallet-2" value={taxWallet2} onChange={(e) => setTaxWallet2(e.target.value)} required/>
+                  <input type="text" className="form-control" name="divison-2" value={division2} onChange={(e) => setDivision2(e.target.value)} required/>
+                </div>
+                <div className="wallet-input-group d-flex mt-3">
+                  <input type="text" className="form-control" name="wallet-3" value={taxWallet3} onChange={(e) => setTaxWallet3(e.target.value)} required/>
+                  <input type="text" className="form-control" name="divison-3" value={division3} onChange={(e) => setDivision3(e.target.value)} required/>
+                </div>
+                <div className="wallet-input-group d-flex mt-3">
+                  <input type="text" className="form-control" name="wallet-4" value={taxWallet4} onChange={(e) => setTaxWallet4(e.target.value)} required/>
+                  <input type="text" className="form-control" name="divison-4" value={division4} onChange={(e) => setDivision4(e.target.value)} required/>
+                </div>
                 <small className="text-dark">Insert your tax wallets.</small>
               </div>
               <div className="form-group mt-3">

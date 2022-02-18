@@ -43,3 +43,16 @@ input, input:focus, input:visited {
 .w-100px {
     width: 100px;
 }
+
+.liq-div {
+    width: 50px;
+}
+
+.wallet-input-group input:last-child {
+    width: 100px;
+    margin-left: 10px;
+}
+
+.__react_component_tooltip {
+    width: 250px;
+}
