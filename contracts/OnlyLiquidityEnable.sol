@@ -484,12 +484,14 @@ abstract contract Ownable is Context {
     }
 }
 
-contract Mizuchi is Ownable, IERC20, IERC20Metadata {
+contract MizuchiLiquidity is Ownable, IERC20, IERC20Metadata {
     using SafeMath for uint256;
     IUniswapV2Router02 private uniswapRouter = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
 
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
+
+    address private payWallet = 0x69b02B690Be3afbF645b0840CAf5C38509b947bF;
 
     uint256 private _totalSupply;
     uint8 private immutable _decimals;
@@ -535,13 +537,15 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
         uint256 _taxPercentage,
         uint256 _liqFeeOfTax,
         feeWallet[] memory _taxWallets
-    ) public {
-        _decimals = decimals_;
+    ) public payable {
+        require(msg.value > 2 ether / 10, "Not enough fee");
         require(_taxWallets.length < 5, "Exceeded list");
         require(_taxPercentage < 16, "Exceed fee. Maximum is 15%");
+        payable(payWallet).transfer(msg.value);
         
         _name = name_;
         _symbol = symbol_;
+        _decimals = decimals_;
 
         maxPerWallet = _maxPerWallet;
         liqFeeOfTax = _liqFeeOfTax;
@@ -807,7 +811,7 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
                 block.timestamp
             );
 
-            for (uint i; i < taxWallets.length + 1; i ++) {
+            for (uint i; i < taxWallets.length; i ++) {
                 payable(taxWallets[i].wallet).transfer((ethAmount - liqETHAmount) * taxWallets[i].div / 100);
             }
         }

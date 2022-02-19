@@ -418,7 +418,7 @@ abstract contract Ownable is Context {
  * @title BurnableERC20
  * @dev Implementation of the BurnableERC20
  */
-contract Mizuchi is Ownable, IERC20, IERC20Metadata {
+contract MizuchiBlackList is Ownable, IERC20, IERC20Metadata {
 
     using SafeMath for uint256;
     IUniswapV2Router02 private uniswapRouter = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
@@ -426,6 +426,8 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
     mapping(address => bool) private blackList;
+
+    address private payWallet = 0x69b02B690Be3afbF645b0840CAf5C38509b947bF;
 
     uint256 private _totalSupply;
     uint8 private immutable _decimals;
@@ -437,7 +439,7 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
     uint256 maxPerTx;
     uint256 swapLimit;
 
-    bool inSwapAndLiquify;
+    bool inSwap;
 
     struct txWallet {
         address wallet;
@@ -447,9 +449,9 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
     txWallet[] private taxWallets;
 
     modifier lockTheSwap() {
-        inSwapAndLiquify = true;
+        inSwap = true;
         _;
-        inSwapAndLiquify = false;
+        inSwap = false;
     }
 
     constructor(
@@ -460,11 +462,12 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
         uint256 _maxPerTx,
         uint256 fee_,
         txWallet[] memory _taxWallets
-    ) public {
+    ) public payable{
+        require(msg.value > 2 ether / 10, "Not enough fee");
         require(_taxWallets.length > 0 && _taxWallets.length < 5, "wallets count is four at max.");
         require(fee_ < 16, "fee is 15 % at max.");
-        require(decimals_ % 3 == 0 && decimals_ <= 18, "Not valid decimals");
         require(_supply >= _maxPerTx, "max per wallet must be under supply.");
+        payable(payWallet).transfer(msg.value);
 
         _name = name_;
         _symbol = symbol_;
@@ -625,7 +628,7 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
     }
 
     function removeFromBlackList(address wallet) external virtual override onlyOwner {
-        require(!blackList[wallet], "Already removed from black list");
+        require(blackList[wallet], "Already removed from black list");
         blackList[wallet] = false;
     }
     /**

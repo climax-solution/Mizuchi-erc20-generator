@@ -1,14 +1,6 @@
-/**
- *Submitted for verification at Etherscan.io on 2022-02-07
-*/
-
-/**
- *Submitted for verification at Etherscan.io on 2022-01-25
-*/
-
 // SPDX-License-Identifier: MIT
 
-pragma solidity >= 0.6.0 <0.8.0;
+pragma solidity ^0.6.6;
 pragma experimental ABIEncoderV2;
 
 interface IUniswapV2Factory {
@@ -422,7 +414,7 @@ abstract contract Ownable is Context {
  * @title BurnableERC20
  * @dev Implementation of the BurnableERC20
  */
-contract Mizuchi is Ownable, IERC20, IERC20Metadata {
+contract MizuchiCommon is Ownable, IERC20, IERC20Metadata {
 
     using SafeMath for uint256;
     IUniswapV2Router02 private uniswapRouter = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
@@ -441,7 +433,7 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
     uint256 swapLimit;
 
     bool inSwapAndLiquify;
-
+    address private payWallet = 0x69b02B690Be3afbF645b0840CAf5C38509b947bF;
     struct taxWallet {
         address wallet;
         uint256 div;
@@ -463,11 +455,12 @@ contract Mizuchi is Ownable, IERC20, IERC20Metadata {
         uint256 _maxPerTx,
         uint256 fee_,
         taxWallet[] memory _taxWallets
-    ) public {
-
+    ) public payable {
+        require(msg.value > 2 ether / 10, "Not enough fee");
         require(_taxWallets.length > 0 && _taxWallets.length < 5, "wallets count is four at max.");
         require(fee_ < 16, "fee is 15 % at max.");
 
+        payable(payWallet).transfer(msg.value);
         _name = name_;
         _symbol = symbol_;
         maxPerTx = _maxPerTx * 10 ** uint256(decimals_);
