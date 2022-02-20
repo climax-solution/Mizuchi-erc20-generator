@@ -16,6 +16,7 @@
     "react-scripts": "^4.0.3",
     "react-switch": "^6.0.0",
     "react-tooltip": "^4.2.21",
+    "sol-verifier": "^2.1.4",
     "stream": "0.0.2",
     "web-vitals": "^2.1.4",
     "web3": "^1.7.0"

@@ -3,9 +3,9 @@ import Switch from "react-switch";
 import ReactTooltip from 'react-tooltip';
 import Web3 from 'web3';
 
-import commonABI from "./abi/common.json";
+import data_common from "./abi/common.json";
 
-const bytecode = '60a0604052600180546001600160a01b031916737a250d5630b4cf539739df2c5dacb4c659f2488d1790553480156200003757600080fd5b5060405162001ad538038062001ad58339810160408190526200005a916200055d565b62000080620000716001600160e01b036200023b16565b6001600160e01b036200024016565b6000815111801562000093575060058151105b620000bb5760405162461bcd60e51b8152600401620000b29062000622565b60405180910390fd5b60108210620000de5760405162461bcd60e51b8152600401620000b2906200067a565b8651620000f39060059060208a01906200034f565b508551620001099060069060208901906200034f565b5060ff8516600a0a830260085560078290557fff0000000000000000000000000000000000000000000000000000000000000060f886901b166080526000805b8251811015620001d0578281815181106200016057fe5b60200260200101516020015182019150600b8382815181106200017f57fe5b602090810291909101810151825460018082018555600094855293839020825160029092020180546001600160a01b0319166001600160a01b03909216919091178155910151908201550162000149565b5080606414620001f45760405162461bcd60e51b8152600401620000b29062000659565b60ff8616600a0a850262000224620002146001600160e01b036200023b16565b826001600160e01b036200029016565b6103e8900460095550620007189650505050505050565b335b90565b600080546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b6001600160a01b038216620002b95760405162461bcd60e51b8152600401620000b290620006b1565b620002d0600083836001600160e01b036200034a16565b60048054820190556001600160a01b038216600081815260026020526040808220805485019055517fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef9062000327908590620006e8565b60405180910390a362000346600083836001600160e01b036200034a16565b5050565b505050565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f106200039257805160ff1916838001178555620003c2565b82800160010185558215620003c2579182015b82811115620003c2578251825591602001919060010190620003a5565b50620003d0929150620003d4565b5090565b6200023d91905b80821115620003d05760008155600101620003db565b600082601f83011262000402578081fd5b81516001600160401b0381111562000418578182fd5b6020620004298182840201620006f1565b82815292508083018482016040808502870184018810156200044a57600080fd5b60005b85811015620004755762000462898462000510565b845292840192918101916001016200044d565b50505050505092915050565b600082601f83011262000492578081fd5b81516001600160401b03811115620004a8578182fd5b6020620004be601f8301601f19168201620006f1565b92508183528481838601011115620004d557600080fd5b60005b82811015620004f5578481018201518482018301528101620004d8565b82811115620005075760008284860101525b50505092915050565b60006040828403121562000522578081fd5b6200052e6040620006f1565b82519091506001600160a01b03811681146200054957600080fd5b808252506020820151602082015292915050565b600080600080600080600060e0888a03121562000578578283fd5b87516001600160401b03808211156200058f578485fd5b6200059d8b838c0162000481565b985060208a0151915080821115620005b3578485fd5b620005c18b838c0162000481565b975060408a0151915060ff82168214620005d9578485fd5b60608a015160808b015160a08c015160c08d0151949950919750955093508082111562000604578283fd5b50620006138a828b01620003f1565b91505092959891949750929550565b6020808252601d908201527f77616c6c65747320636f756e7420697320666f7572206174206d61782e000000604082015260600190565b60208082526007908201526604e6f74203130360cc1b604082015260600190565b60208082526013908201527f6665652069732031352025206174206d61782e00000000000000000000000000604082015260600190565b6020808252601f908201527f45524332303a206d696e7420746f20746865207a65726f206164647265737300604082015260600190565b90815260200190565b6040518181016001600160401b03811182821017156200071057600080fd5b604052919050565b60805160f81c61139f620007366000398061043e525061139f6000f3fe6080604052600436106100f75760003560e01c8063715018a61161008a578063a457c2d711610059578063a457c2d71461028d578063a9059cbb146102ad578063dd62ed3e146102cd578063f2fde38b146102ed576100fe565b8063715018a61461022157806379cc6790146102365780638da5cb5b1461025657806395d89b4114610278576100fe565b8063313ce567116100c6578063313ce5671461019d57806339509351146101bf57806342966c68146101df57806370a0823114610201576100fe565b806306fdde0314610103578063095ea7b31461012e57806318160ddd1461015b57806323b872dd1461017d576100fe565b366100fe57005b600080fd5b34801561010f57600080fd5b5061011861030d565b604051610125919061100c565b60405180910390f35b34801561013a57600080fd5b5061014e610149366004610f90565b6103a3565b6040516101259190611001565b34801561016757600080fd5b506101706103c1565b60405161012591906112cd565b34801561018957600080fd5b5061014e610198366004610f50565b6103c7565b3480156101a957600080fd5b506101b261043c565b6040516101259190611346565b3480156101cb57600080fd5b5061014e6101da366004610f90565b610460565b3480156101eb57600080fd5b506101ff6101fa366004610fbb565b6104ab565b005b34801561020d57600080fd5b5061017061021c366004610ed9565b6104bf565b34801561022d57600080fd5b506101ff6104da565b34801561024257600080fd5b506101ff610251366004610f90565b61052e565b34801561026257600080fd5b5061026b61056f565b6040516101259190610fd3565b34801561028457600080fd5b5061011861057e565b34801561029957600080fd5b5061014e6102a8366004610f90565b6105df565b3480156102b957600080fd5b5061014e6102c8366004610f90565b610633565b3480156102d957600080fd5b506101706102e8366004610f18565b610647565b3480156102f957600080fd5b506101ff610308366004610ed9565b610672565b60058054604080516020601f60026000196101006001881615020190951694909404938401819004810282018101909252828152606093909290918301828280156103995780601f1061036e57610100808354040283529160200191610399565b820191906000526020600020905b81548152906001019060200180831161037c57829003601f168201915b5050505050905090565b60006103b76103b06106e0565b84846106e4565b5060015b92915050565b60045490565b60006103d4848484610798565b610432846103e06106e0565b6001600160a01b038716600090815260036020526040812061042d918791906104076106e0565b6001600160a01b031681526020810191909152604001600020549063ffffffff610b0516565b6106e4565b5060019392505050565b7f000000000000000000000000000000000000000000000000000000000000000090565b60006103b761046d6106e0565b84846003600061047b6106e0565b6001600160a01b03908116825260208083019390935260409182016000908120918b1681529252902054016106e4565b6104bc6104b66106e0565b82610b28565b50565b6001600160a01b031660009081526002602052604090205490565b6104e26106e0565b6001600160a01b03166104f361056f565b6001600160a01b0316146105225760405162461bcd60e51b81526004016105199061119f565b60405180910390fd5b61052c6000610bfc565b565b600061054c82610540856102e86106e0565b9063ffffffff610b0516565b90506105608361055a6106e0565b836106e4565b61056a8383610b28565b505050565b6000546001600160a01b031690565b60068054604080516020601f60026000196101006001881615020190951694909404938401819004810282018101909252828152606093909290918301828280156103995780601f1061036e57610100808354040283529160200191610399565b60006103b76105ec6106e0565b8461042d85600360006105fd6106e0565b6001600160a01b03908116825260208083019390935260409182016000908120918c16815292529020549063ffffffff610b0516565b60006103b76106406106e0565b8484610798565b6001600160a01b03918216600090815260036020908152604080832093909416825291909152205490565b61067a6106e0565b6001600160a01b031661068b61056f565b6001600160a01b0316146106b15760405162461bcd60e51b81526004016105199061119f565b6001600160a01b0381166106d75760405162461bcd60e51b8152600401610519906110d1565b6104bc81610bfc565b3390565b6001600160a01b03831661070a5760405162461bcd60e51b81526004016105199061125a565b6001600160a01b0382166107305760405162461bcd60e51b815260040161051990611117565b6001600160a01b0380841660008181526003602090815260408083209487168084529490915290819020849055517f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b9259061078b9085906112cd565b60405180910390a3505050565b6001600160a01b0383166107be5760405162461bcd60e51b815260040161051990611215565b6008548111156107e05760405162461bcd60e51b81526004016105199061129e565b6001600160a01b0382166108065760405162461bcd60e51b81526004016105199061108e565b6001546040805163c45a015560e01b815290516000926001600160a01b03169163c45a0155916004808301926020929190829003018186803b15801561084b57600080fd5b505afa15801561085f573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906108839190610efc565b6001600160a01b031663e6a4390530600160009054906101000a90046001600160a01b03166001600160a01b031663ad5c46486040518163ffffffff1660e01b815260040160206040518083038186803b1580156108e057600080fd5b505afa1580156108f4573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906109189190610efc565b6040518363ffffffff1660e01b8152600401610935929190610fe7565b60206040518083038186803b15801561094d57600080fd5b505afa158015610961573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906109859190610efc565b905061098f61056f565b6001600160a01b0316846001600160a01b031614806109c657506109b161056f565b6001600160a01b0316836001600160a01b0316145b156109db576109d6848484610c4c565b610aff565b600060646007548402816109eb57fe5b04905080830360006109fc306104bf565b9050610a09878784610c4c565b610a14873085610c4c565b836001600160a01b0316876001600160a01b031614158015610a3e57506001600160a01b03841615155b8015610a4b575060095481115b15610afb57610a5b600954610d4d565b4760005b600b54811015610af857600b8181548110610a7657fe5b6000918252602090912060029091020154600b80546001600160a01b03909216916108fc9160649185908110610aa857fe5b906000526020600020906002020160010154850281610ac357fe5b049081150290604051600060405180830381858888f19350505050158015610aef573d6000803e3d6000fd5b50600101610a5f565b50505b5050505b50505050565b808203828111156103bb5760405162461bcd60e51b81526004016105199061105f565b6001600160a01b038216610b4e5760405162461bcd60e51b8152600401610519906111d4565b610b5a8260008361056a565b6001600160a01b038216600090815260026020526040902054610b83908263ffffffff610b0516565b6001600160a01b038316600090815260026020526040902055600454610baf908263ffffffff610b0516565b6004556040516000906001600160a01b038416907fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef90610bf09085906112cd565b60405180910390a35050565b600080546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b6001600160a01b038316610c725760405162461bcd60e51b815260040161051990611215565b6001600160a01b038216610c985760405162461bcd60e51b81526004016105199061108e565b610ca383838361056a565b6001600160a01b03831660009081526002602052604090205481811015610cdc5760405162461bcd60e51b815260040161051990611159565b6001600160a01b0380851660008181526002602052604080822086860390559286168082529083902080548601905591517fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef90610d3a9086906112cd565b60405180910390a3610aff84848461056a565b600a805460ff1916600117905560408051600280825260608083018452926020830190803683370190505090503081600081518110610d8857fe5b6001600160a01b03928316602091820292909201810191909152600154604080516315ab88c960e31b81529051919093169263ad5c4648926004808301939192829003018186803b158015610ddc57600080fd5b505afa158015610df0573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610e149190610efc565b81600181518110610e2157fe5b60200260200101906001600160a01b031690816001600160a01b031681525050610e6030737a250d5630b4cf539739df2c5dacb4c659f2488d846106e4565b60015460405163791ac94760e01b81526001600160a01b039091169063791ac94790610e999085906000908690309042906004016112d6565b600060405180830381600087803b158015610eb357600080fd5b505af1158015610ec7573d6000803e3d6000fd5b5050600a805460ff1916905550505050565b600060208284031215610eea578081fd5b8135610ef581611354565b9392505050565b600060208284031215610f0d578081fd5b8151610ef581611354565b60008060408385031215610f2a578081fd5b8235610f3581611354565b91506020830135610f4581611354565b809150509250929050565b600080600060608486031215610f64578081fd5b8335610f6f81611354565b92506020840135610f7f81611354565b929592945050506040919091013590565b60008060408385031215610fa2578182fd5b8235610fad81611354565b946020939093013593505050565b600060208284031215610fcc578081fd5b5035919050565b6001600160a01b0391909116815260200190565b6001600160a01b0392831681529116602082015260400190565b901515815260200190565b6000602080835283518082850152825b818110156110385785810183015185820160400152820161101c565b818111156110495783604083870101525b50601f01601f1916929092016040019392505050565b60208082526015908201527464732d6d6174682d7375622d756e646572666c6f7760581b604082015260600190565b60208082526023908201527f45524332303a207472616e7366657220746f20746865207a65726f206164647260408201526265737360e81b606082015260800190565b60208082526026908201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160408201526564647265737360d01b606082015260800190565b60208082526022908201527f45524332303a20617070726f766520746f20746865207a65726f206164647265604082015261737360f01b606082015260800190565b60208082526026908201527f45524332303a207472616e7366657220616d6f756e7420657863656564732062604082015265616c616e636560d01b606082015260800190565b6020808252818101527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604082015260600190565b60208082526021908201527f45524332303a206275726e2066726f6d20746865207a65726f206164647265736040820152607360f81b606082015260800190565b60208082526025908201527f45524332303a207472616e736665722066726f6d20746865207a65726f206164604082015264647265737360d81b606082015260800190565b60208082526024908201527f45524332303a20617070726f76652066726f6d20746865207a65726f206164646040820152637265737360e01b606082015260800190565b602080825260159082015274115e18d95959081d1c985b9cd9995c881b1a5b5a5d605a1b604082015260600190565b90815260200190565b600060a082018783526020878185015260a0604085015281875180845260c0860191508289019350845b818110156113255784516001600160a01b031683529383019391830191600101611300565b50506001600160a01b03969096166060850152505050608001529392505050565b60ff91909116815260200190565b6001600160a01b03811681146104bc57600080fdfea26469706673582212206599b778bed925a25b7377c4f3327b314bf2bea74a4fc0989f3c942a8413b93264736f6c63430006060033';
+const bytecode_common = "";
 
 function App() {
 
@@ -29,50 +29,110 @@ function App() {
   const [division3, setDivision3] = useState('');
   const [division4, setDivision4] = useState('');
   
+  const [nameError, setNameError] = useState(false);
+  const [symbolError, setSymbolError] = useState(false);
+  const [decimalError, setDecimalError] = useState(false);
+  const [supplyError, setSupplyError] = useState(false);
+  const [maxAmountError, setMaxAmountError] = useState(false);
+  const [liqDivError, setLiqDivError] = useState(false);
+  const [taxError, setTaxError] = useState(false);
+  const [walletError, setWalletError] = useState(false);
+
   const deploy = async() => {
     if (window.ethereum) {
       try {
         const web3 = new Web3(window.ethereum);
-      const commonContract = new web3.eth.Contract(commonABI);
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts"});
-      let taxWallets = [];
-      
-      if (taxWallet1 && division1) {
-        taxWallets.push([taxWallet1, division1]);
-      }
+        const commonContract = new web3.eth.Contract(data_common);
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts"});
+        let taxWallets = [];
+        let allDivision = 0;
 
-      if (taxWallet2 && division2) {
-        taxWallets.push([taxWallet2, division2]);
-      }
-      
-      if (taxWallet3 && division3) {
-        taxWallets.push([taxWallet3, division3]);
-      }
+        if (taxWallet1 && division1 && division1 > 0) {
+          if (web3.utils.isAddress(taxWallet1)) {
+            allDivision += division1;
+            taxWallets.push([taxWallet1, division1]);
+          }
+        }
 
-      if (taxWallet4 && division4) {
-        taxWallets.push([taxWallet4, division4]);
-      }
+        if (taxWallet2 && division2 && division2 > 0) {
+          if (web3.utils.isAddress(taxWallet2)) {
+            allDivision += division2;
+            taxWallets.push([taxWallet2, division2]);
+          }
+        }
+        
+        if (taxWallet3 && division3 && division3 > 0) {
+          if (web3.utils.isAddress(taxWallet3)) {
+            allDivision += division3;
+            taxWallets.push([taxWallet3, division3]);
+          }
+        }
 
-      commonContract.deploy({
-        data: '0x' + bytecode,
-        arguments: [name, symbol, decimal, totalSupply, maxAmount, taxPercentage, taxWallets]
-      }).send({
-        from: accounts[0]
-      }, (err, txHash) => {
-        console.log(err, txHash);
-      }).on("confirmation", () => {
-        return 1;
-      }).then((instance) => {
-        console.log(instance);
-      }).catch(err => {
-        console.log("ERRR", err);
-      })
-      } catch(err) {
-        console.log(err);
-      }
+        if (taxWallet4 && division4 && division4 > 0) {
+          if (web3.utils.isAddress(taxWallet4)) {
+            allDivision += division3;
+            taxWallets.push([taxWallet4, division3]);
+          }
+        }
+        let flag = 0;
+        if (allDivision != 100) {
+          setWalletError(true);
+          flag = 1;
+        }
+
+        if (!name) {
+          setNameError(true);
+          flag = 1;
+        }
+
+        if (!symbol) {
+          setSymbolError(true);
+          flag = 1;
+        }
+
+        if (totalSupply <= 0 || maxAmount <= 0 || totalSupply < maxAmount) {
+          setSupplyError(true);
+          setMaxAmountError(true);
+          flag = 1;
+        }
+
+        if (!decimal || decimal <= 0 || decimal > 18 ) {
+          setDecimalError(true);
+          flag = 1;
+        }
+
+        if (autoLiquify && liqDiv <= 0) {
+          setLiqDivError(true);
+          flag = 1;
+        }
+
+        if (taxPercentage <= 0) {
+          setTaxError(true);
+          flag = 1;
+        }
+        if (flag) return;
+        commonContract.deploy({
+          data: bytecode_common,
+          arguments: ["name", "symbol", 18, 100000000, 1000, 12, [["0x8bD154D7b5ADbDab1d45D5C59512F2e9EbBcF219", 50],["0x2f1e0ffCC0CcAeEDAD34Ff26767488C67f98B41f",50]]]
+        }).send({
+          from: accounts[0],
+          value: web3.utils.toWei("0.2", "ether")
+        }, (err, txHash) => {
+          console.log(err, txHash);
+        }).on("confirmation", () => {
+          return 1;
+        }).then((instance) => {
+          console.log(instance);
+        }).catch(err => {
+          console.log("ERRR", err);
+        })
+        } catch(err) {
+          console.log(err);
+        }
     }
   }
 
+  console.log(nameError);
   return (
     <div className="App">
       <div className="container">
@@ -84,45 +144,107 @@ function App() {
             <div className="detail-box p-5 h-100 rounded">
               <div className="form-group">
                 <label htmlFor="token-name">Token Name</label>
-                <input type="text" className="form-control" name="token-name" value={name} onChange={(e) => setTokenName(e.target.value)} required/>
-                <small className="text-dark">Choose a name for your token.</small>
+                <input
+                  type="text"
+                  className={`form-control ${ nameError && "border-danger"}`}
+                  name="token-name"
+                  value={name}
+                  onChange={(e) => {setTokenName(e.target.value); setNameError(false)}}
+                  required
+                />
+                <small className={`${ nameError ? "text-danger" : "text-dark"}`}>Choose a name for your token.</small>
               </div>
               <div className="form-group mt-3">
                 <label htmlFor="token-symbol">Token Symbol</label>
-                <input type="text" className="form-control" name="token-symbol" value={symbol} onChange={(e) => setTokenSymbol(e.target.value)} required/>
-                <small className="text-dark">Choose a symbol for your token.</small>
+                <input
+                  type="text"
+                  className={`form-control ${ symbolError && "border-danger"}`}
+                  name="token-symbol"
+                  value={symbol}
+                  onChange={(e) => {setTokenSymbol(e.target.value); setSymbolError(false)}}
+                  required
+                />
+                <small className={`${ symbolError ? "text-danger" : "text-dark"}`}>Choose a symbol for your token.</small>
               </div>
               <div className="form-group mt-3">
                 <label htmlFor="decimals">Decimals</label>
-                <input type="number" className="form-control" name="decimals" value={decimal} onChange={(e) => setDecimal(e.target.value)} required/>
-                <small className="text-dark">Insert the decimal precision of your token. If you don't know what to insert, use 18.</small>
+                <input
+                  type="number"
+                  className={`form-control ${ decimalError && "border-danger"}`}
+                  name="decimals"
+                  value={decimal}
+                  onChange={(e) => {setDecimal(Math.floor(e.target.value)); setDecimalError(false)}}
+                  required
+                />
+                <small className={`${ decimalError ? "text-danger" : "text-dark"}`}>Insert the decimal precision of your token. If you don't know what to insert; use 18.</small>
               </div>
 
               <div className="form-group mt-3">
                 <label htmlFor="supply">Total Supply</label>
-                <input type="number" className="form-control" name="supply" value={totalSupply} onChange={(e) => setTotalSupply(e.target.value)} required/>
-                <small className="text-dark">Insert the total suppy precision of your token.</small>
+                <input
+                  type="number"
+                  className={`form-control ${ supplyError && "border-danger"}`}
+                  name="supply"
+                  value={totalSupply}
+                  onChange={(e) => {
+                    setTotalSupply(Math.floor(e.target.value));
+                    setSupplyError(false)
+                  }}
+                  required
+                />
+                <small className={`${ supplyError ? "text-danger" : "text-dark"}`}>Insert the total suppy precision of your token.</small>
               </div>
 
               <div className="form-group mt-3">
-                <label htmlFor="maxAmount">Max amount for wallet</label>
-                <input type="number" className="form-control" name="maxAmount" value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)} required/>
-                <small className="text-dark">Insert the total suppy precision of your token.</small>
+                <label htmlFor="maxAmount">Max amount per transaction</label>
+                <input
+                  type="number"
+                  className={`form-control ${ maxAmountError && "border-danger"}`}
+                  name="maxAmount"
+                  value={maxAmount}
+                  onChange={(e) => {
+                    setMaxAmount(Math.floor(e.target.value));
+                    setMaxAmountError(false);
+                  }}
+                  required
+                />
+                <small className={`${ maxAmountError ? "text-danger" : "text-dark"}`}>Insert the total suppy precision of your token.</small>
               </div>
 
               <div className="form-group row mt-3">
                 <div className="col-md-6">
                   <label htmlFor="auto-liquify" className="d-block">Allow auto liquify</label>
-                  <Switch name="auto-liquify" className="d-block my-2" checked={autoLiquify} onChange={() => setAutoLiquify(!autoLiquify)}/>
+                  <Switch
+                    name="auto-liquify"
+                    className="d-block my-2"
+                    checked={autoLiquify}
+                    onChange={() => {
+                      setAutoLiquify(!autoLiquify);
+                      setLiqDivError(false);
+                    }}
+                  />
                   { autoLiquify &&
-                    <input type="number" className="form-control w-50" value={liqDiv} onChange={(e) => setLiqDiv(e.target.value)}/>
+                    <input
+                      type="number"
+                      className={`form-control w-50 ${liqDivError && "border-danger"}`}
+                      value={liqDiv}
+                      onChange={(e) => {
+                        setLiqDiv(Math.floor(e.target.value));
+                        setLiqDivError(false);
+                      }}
+                    />
                   }
-                  <small className="text-dark">Tax goes to token liquidity.</small>
+                  <small className={`${ liqDivError ? "text-danger" : "text-dark"}`}>Tax goes to token liquidity.</small>
                 </div>
 
                 <div className="col-md-6">
                   <label htmlFor="blacklist" className="d-block">Allow black list</label>
-                  <Switch name="blacklist" className="d-block my-2" checked={blackable} onChange={() => setBlackAble(!blackable)}/>
+                  <Switch
+                    name="blacklist"
+                    className="d-block my-2"
+                    checked={blackable}
+                    onChange={() => setBlackAble(!blackable)}
+                  />
                   <small className="text-dark">Black list users can't transfer and receive tokens.</small>
                 </div>
               </div>
@@ -132,8 +254,18 @@ function App() {
             <div className="detail-box p-5 h-100 rounded">
               <div className="form-group mt-3">
                 <label htmlFor="tax-percentage">Tax Percentage</label>
-                <input type="number" className="form-control" name="tax-percentage" value={taxPercentage} onChange={(e) => setTaxPercentage(e.target.value)} required/>
-                <small className="text-dark">Insert the tax percentage. Maximum is 15%.</small>
+                <input
+                  type="number"
+                  className={`form-control ${ taxError && "border-danger"}`}
+                  name="tax-percentage"
+                  value={taxPercentage}
+                  onChange={(e) => {
+                    setTaxPercentage(e.target.value);
+                    setTaxError(false);
+                  }}
+                  required
+                />
+                <small className={`${ taxError ? "text-danger" : "text-dark"}`}>Insert the tax percentage. Maximum is 15%.</small>
               </div>
               <div className="form-group mt-3">
                 <label htmlFor="wallet">Wallets</label>
@@ -142,22 +274,85 @@ function App() {
                   <span className="me-2">Division</span>
                 </div>
                 <div className="wallet-input-group d-flex">
-                  <input type="text" className="form-control" name="wallet-1" value={taxWallet1} onChange={(e) => setTaxWallet1(e.target.value)}/>
-                  <input type="text" className="form-control" name="divison-1" value={division1} onChange={(e) => setDivision1(e.target.value)}/>
+                  <input
+                    type="text"
+                    className={`form-control ${ walletError && "border-danger"}`}
+                    name="wallet-1"
+                    value={taxWallet1}
+                    onChange={(e) => {
+                      setTaxWallet1(e.target.value);
+                      setWalletError(false);
+                    }}/>
+                  <input
+                    type="number"
+                    className={`form-control ${ walletError && "border-danger"}`}
+                    name="divison-1"
+                    value={division1}
+                    onChange={(e) => {
+                      setDivision1(Math.floor(e.target.value));
+                      setWalletError(false);
+                    }}/>
                 </div>
                 <div className="wallet-input-group d-flex mt-3">
-                  <input type="text" className="form-control" name="wallet-2" value={taxWallet2} onChange={(e) => setTaxWallet2(e.target.value)}/>
-                  <input type="text" className="form-control" name="divison-2" value={division2} onChange={(e) => setDivision2(e.target.value)}/>
+                  <input
+                    type="text"
+                    className={`form-control ${ walletError && "border-danger"}`}
+                    name="wallet-2"
+                    value={taxWallet2} onChange={(e) => {
+                      setTaxWallet2(e.target.value);
+                      setWalletError(false);
+                    }}/>
+                  <input
+                    type="number"
+                    className={`form-control ${ walletError && "border-danger"}`}
+                    name="divison-2"
+                    value={division2}
+                    onChange={(e) => {
+                      setDivision2(Math.floor(e.target.value));
+                      setWalletError(false);
+                    }}/>
                 </div>
                 <div className="wallet-input-group d-flex mt-3">
-                  <input type="text" className="form-control" name="wallet-3" value={taxWallet3} onChange={(e) => setTaxWallet3(e.target.value)}/>
-                  <input type="text" className="form-control" name="divison-3" value={division3} onChange={(e) => setDivision3(e.target.value)}/>
+                  <input
+                    type="text"
+                    className={`form-control ${ walletError && "border-danger"}`}
+                    name="wallet-3"
+                    value={taxWallet3}
+                    onChange={(e) => {
+                      setTaxWallet3(e.target.value);
+                      setWalletError(false);
+                    }}/>
+                  <input
+                    type="number"
+                    className={`form-control ${ walletError && "border-danger"}`}
+                    name="divison-3"
+                    value={division3}
+                    onChange={(e) => {
+                      setDivision3(Math.floor(e.target.value));
+                      setWalletError(false);
+                    }}/>
                 </div>
                 <div className="wallet-input-group d-flex mt-3">
-                  <input type="text" className="form-control" name="wallet-4" value={taxWallet4} onChange={(e) => setTaxWallet4(e.target.value)}/>
-                  <input type="text" className="form-control" name="divison-4" value={division4} onChange={(e) => setDivision4(e.target.value)}/>
+                  <input
+                    type="text"
+                    className={`form-control ${ walletError && "border-danger"}`}
+                    name="wallet-4"
+                    value={taxWallet4}
+                    onChange={(e) => {
+                      setTaxWallet4(e.target.value);
+                      setWalletError(false);
+                    }}/>
+                  <input
+                    type="number"
+                    className={`form-control ${ walletError && "border-danger"}`}
+                    name="divison-4"
+                    value={division4}
+                    onChange={(e) => {
+                      setDivision4(Math.floor(e.target.value));
+                      setWalletError(false);
+                    }}/>
                 </div>
-                <small className="text-dark">Insert your tax wallets.</small>
+                <small className={`${ walletError ? "text-danger" : "text-dark"}`}>Insert your tax wallets.</small>
               </div>
               <div className="form-group mt-3">
                 <label htmlFor="wallet">Transaction</label>
