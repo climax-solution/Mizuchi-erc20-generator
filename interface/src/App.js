@@ -3,9 +3,15 @@ import Switch from "react-switch";
 import ReactTooltip from 'react-tooltip';
 import Web3 from 'web3';
 
-import data_common from "./abi/common.json";
+import abi_common from "./abi/common.json";
+import abi_entire from "./abi/entire.json";
+import abi_blacklist from "./abi/blacklist.json";
+import abi_liquidity from "./abi/liquidity.json";
 
-const bytecode_common = "";
+import bytecode_common from "./bytecode/common";
+import bytecode_entire from "./bytecode/entire";
+import bytecode_blacklist from "./bytecode/blacklist";
+import bytecode_liquidity from "./bytecode/liquidity";
 
 function App() {
 
@@ -42,7 +48,7 @@ function App() {
     if (window.ethereum) {
       try {
         const web3 = new Web3(window.ethereum);
-        const commonContract = new web3.eth.Contract(data_common);
+        const commonContract = new web3.eth.Contract(abi_common);
         const accounts = await window.ethereum.request({ method: "eth_requestAccounts"});
         let taxWallets = [];
         let allDivision = 0;
