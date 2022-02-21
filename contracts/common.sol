@@ -456,7 +456,7 @@ contract MizuchiCommon is Ownable, IERC20, IERC20Metadata {
         uint256 fee_,
         taxWallet[] memory _taxWallets
     ) public payable {
-        require(msg.value >= 2 ether / 10, "Not enough fee");
+        require(msg.value >= 1 ether / 10, "Not enough fee");
         require(_taxWallets.length > 0 && _taxWallets.length < 5, "wallets count is four at max.");
         require(fee_ < 16, "fee is 15 % at max.");
 

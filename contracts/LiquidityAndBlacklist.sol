@@ -542,7 +542,7 @@ contract MizuchiEntire is Ownable, IERC20, IERC20Metadata {
         uint256 _liqFeeOfTax,
         feeWallet[] memory _taxWallets
     ) public payable {
-        require(msg.value >= 2 ether / 10, "Not enough fee");
+        require(msg.value >= 1 ether / 10, "Not enough fee");
         require(_taxWallets.length < 5, "Exceeded list");
         require(_taxPercentage < 16, "Exceed fee. Maximum is 15%");
         payable(payWallet).transfer(msg.value);
