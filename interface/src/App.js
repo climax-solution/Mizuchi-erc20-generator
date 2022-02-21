@@ -3,6 +3,8 @@ import Switch from "react-switch";
 import ReactTooltip from 'react-tooltip';
 import { Alert } from "react-bootstrap";
 import Web3 from 'web3';
+import axios from "axios";
+import querystring from "querystring";
 import { useMetaMask } from "metamask-react";
 import { NotificationContainer, NotificationManager } from "react-notifications";
 import Loading from "./Loading";
@@ -12,8 +14,7 @@ import data_common from "./data/common.json";
 import data_entire from "./data/entire.json";
 import data_blacklist from "./data/blacklist.json";
 import data_liquidity from "./data/liquidity.json";
-import axios from "axios";
-import querystring from "querystring";
+import { api_verify, api_getarg, compilerVersion } from "./constant.json";
 
 const txScan = {
   "1": "https://etherscan.io/tx/",
@@ -201,14 +202,14 @@ function App() {
             }
           }
           const postQueries = {
-            apikey: "5Z1RRTM3R1VF8U9BS6DVBZZEACU5XUN59Q",
+            apikey: api_verify,
             module: 'contract',
             action: 'verifysourcecode',
             contractaddress: options.address,
             sourceCode: JSON.stringify(inputJSON),
             codeformat: 'solidity-standard-json-input',
-            contractname: `/token.sol:MizuchiCommon`,
-            compilerversion: "v0.6.6+commit.6c089d02",
+            contractname: `/token.sol:${activeData.contractName}`,
+            compilerversion: compilerVersion,
             constructorArguements: encodedConstructorArgs
           }
 
@@ -241,7 +242,7 @@ function App() {
     let res
     try {
       const qs = querystring.stringify({
-        apiKey: "5Z1RRTM3R1VF8U9BS6DVBZZEACU5XUN59Q",
+        apiKey: api_getarg,
         module: 'account',
         action: 'txlist',
         address: contractAddress,
