@@ -1,19 +1,30 @@
 import { useState } from "react";
 import Switch from "react-switch";
 import ReactTooltip from 'react-tooltip';
+import { Alert } from "react-bootstrap";
 import Web3 from 'web3';
+import { useMetaMask } from "metamask-react";
+import { NotificationContainer, NotificationManager } from "react-notifications";
+import Loading from "./Loading";
+import "react-notifications/lib/notifications.css";
 
-import abi_common from "./abi/common.json";
-import abi_entire from "./abi/entire.json";
-import abi_blacklist from "./abi/blacklist.json";
-import abi_liquidity from "./abi/liquidity.json";
+import data_common from "./data/common.json";
+import data_entire from "./data/entire.json";
+import data_blacklist from "./data/blacklist.json";
+import data_liquidity from "./data/liquidity.json";
 
-import bytecode_common from "./bytecode/common";
-import bytecode_entire from "./bytecode/entire";
-import bytecode_blacklist from "./bytecode/blacklist";
-import bytecode_liquidity from "./bytecode/liquidity";
-
+const txScan = {
+  "1": "https://etherscan.io/tx/",
+  "3": "https://ropsten.etherscan.io",
+  "4": "https://rinkeby.etherscan.io",
+  "5": "https://goerli.etherscan.io",
+  "42": "https://kovan.etherscan.io"
+}
 function App() {
+
+  const [loading, setLoading] = useState(false);
+  const [show, setShow] = useState(false);
+  const [txHash, setTxHash] = useState('');
 
   const [name, setTokenName] = useState('');
   const [symbol,setTokenSymbol] = useState('');
@@ -24,6 +35,7 @@ function App() {
   const [totalSupply, setTotalSupply] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
   const [liqDiv, setLiqDiv] = useState('');
+  const { status, connect, account, chainId, ethereum } = useMetaMask();
 
   const [taxWallet1, setTaxWallet1] = useState('');
   const [taxWallet2, setTaxWallet2] = useState('');
@@ -47,8 +59,8 @@ function App() {
   const deploy = async() => {
     if (window.ethereum) {
       try {
+        setLoading(true);
         const web3 = new Web3(window.ethereum);
-        const commonContract = new web3.eth.Contract(abi_common);
         const accounts = await window.ethereum.request({ method: "eth_requestAccounts"});
         let taxWallets = [];
         let allDivision = 0;
@@ -117,30 +129,72 @@ function App() {
           flag = 1;
         }
         if (flag) return;
-        commonContract.deploy({
-          data: bytecode_common,
-          arguments: ["name", "symbol", 18, 100000000, 1000, 12, [["0x8bD154D7b5ADbDab1d45D5C59512F2e9EbBcF219", 50],["0x2f1e0ffCC0CcAeEDAD34Ff26767488C67f98B41f",50]]]
+
+        let activeAbi; let activeBytecode; let constructor = [];
+
+        if (!autoLiquify && !blackable) {
+          activeAbi = data_common.abi;
+          activeBytecode = data_common.bytecode;
+          constructor = [
+            name, symbol,decimal, totalSupply, maxAmount, taxPercentage, taxWallets
+          ];
+        }
+        else if (autoLiquify && blackable) {
+          activeAbi = data_entire.abi;
+          activeBytecode = data_entire.bytecode;
+          constructor = [
+            name, symbol,decimal, totalSupply, maxAmount, taxPercentage, liqDiv, taxWallets
+          ];
+        }
+        else if (autoLiquify  && !blackable) {
+          activeAbi = data_liquidity.abi;
+          activeBytecode = data_liquidity.bytecode;
+          constructor = [
+            name, symbol,decimal, totalSupply, maxAmount, taxPercentage, liqDiv, taxWallets
+          ];
+        }
+        else if (!autoLiquify  && blackable) {
+          activeAbi = data_blacklist.abi;
+          activeBytecode = data_blacklist.bytecode;
+          constructor = [
+            name, symbol,decimal, totalSupply, maxAmount, taxPercentage, taxWallets
+          ];
+        }
+
+        const commonContract = new web3.eth.Contract(activeAbi);
+        await commonContract.deploy({
+          data: activeBytecode,
+          arguments: constructor
         }).send({
           from: accounts[0],
           value: web3.utils.toWei("0.2", "ether")
-        }, (err, txHash) => {
-          console.log(err, txHash);
+        }, (err, hash) => {
+          if (!err) setTxHash(hash);
         }).on("confirmation", () => {
           return 1;
         }).then((instance) => {
-          console.log(instance);
+          NotificationManager.success("Deployed successfully");
+          setLoading(false);
+          setShow(true);
         }).catch(err => {
           console.log("ERRR", err);
         })
+        setLoading(false);
         } catch(err) {
-          console.log(err);
+          setLoading(false);
+          setShow(false);
+          NotificationManager.warning(err.message);
         }
+    }
+    else {
+      NotificationManager.warning("Metamask is not installed");
     }
   }
 
-  console.log(nameError);
   return (
     <div className="App">
+      <NotificationContainer/>
+      { loading && <Loading/> }
       <div className="container">
         <div className="text-center py-3">
           <img src="/assets/logo.png" className="w-100px"/>
@@ -393,6 +447,11 @@ function App() {
             </div>
           {/* </div> */}
         </div>
+        { show && (
+          <Alert variant="success" onClose={() => setShow(false)} dismissible>
+            <p><a href={txScan[chainId] + txHash} _target="blank">{txHash}</a></p>
+          </Alert>
+        )}
       </div>
     </div>
   );
