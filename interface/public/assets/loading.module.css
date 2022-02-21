@@ -7,6 +7,7 @@
   background: #04210465;
   position: fixed;
   width: 100%;
+  z-index: 9999;
   /* animation: animateBg 10s linear infinite; */
 }
 @keyFrames animateBg

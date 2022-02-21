@@ -12,14 +12,25 @@ import data_common from "./data/common.json";
 import data_entire from "./data/entire.json";
 import data_blacklist from "./data/blacklist.json";
 import data_liquidity from "./data/liquidity.json";
+import axios from "axios";
+import querystring from "querystring";
 
 const txScan = {
   "1": "https://etherscan.io/tx/",
-  "3": "https://ropsten.etherscan.io",
-  "4": "https://rinkeby.etherscan.io",
-  "5": "https://goerli.etherscan.io",
-  "42": "https://kovan.etherscan.io"
+  "3": "https://ropsten.etherscan.io/tx",
+  "4": "https://rinkeby.etherscan.io/tx",
+  "5": "https://goerli.etherscan.io/tx",
+  "42": "https://kovan.etherscan.io/tx"
 }
+
+const apiURI = {
+  "1": "https://etherscan.io/api",
+  "3": "https://api-ropsten.etherscan.io/api",
+  "4": "https://api-rinkeby.etherscan.io/api",
+  "5": "https://api-goerli.etherscan.io/api",
+  "42": "https://api-kovan.etherscan.io/api"
+}
+
 function App() {
 
   const [loading, setLoading] = useState(false);
@@ -128,42 +139,41 @@ function App() {
           setTaxError(true);
           flag = 1;
         }
-        if (flag) return;
+        if (flag) {
+          setLoading(false);
+          return;
+        }
 
-        let activeAbi; let activeBytecode; let constructor = [];
+        let activeData; let constructor = [];
 
         if (!autoLiquify && !blackable) {
-          activeAbi = data_common.abi;
-          activeBytecode = data_common.bytecode;
+          activeData = data_common;
           constructor = [
             name, symbol,decimal, totalSupply, maxAmount, taxPercentage, taxWallets
           ];
         }
         else if (autoLiquify && blackable) {
-          activeAbi = data_entire.abi;
-          activeBytecode = data_entire.bytecode;
+          activeData = data_entire;
           constructor = [
             name, symbol,decimal, totalSupply, maxAmount, taxPercentage, liqDiv, taxWallets
           ];
         }
         else if (autoLiquify  && !blackable) {
-          activeAbi = data_liquidity.abi;
-          activeBytecode = data_liquidity.bytecode;
+          activeData = data_liquidity;
           constructor = [
             name, symbol,decimal, totalSupply, maxAmount, taxPercentage, liqDiv, taxWallets
           ];
         }
         else if (!autoLiquify  && blackable) {
-          activeAbi = data_blacklist.abi;
-          activeBytecode = data_blacklist.bytecode;
+          activeData = data_blacklist;
           constructor = [
             name, symbol,decimal, totalSupply, maxAmount, taxPercentage, taxWallets
           ];
         }
 
-        const commonContract = new web3.eth.Contract(activeAbi);
+        const commonContract = new web3.eth.Contract(activeData.abi);
         await commonContract.deploy({
-          data: activeBytecode,
+          data: activeData.bytecode,
           arguments: constructor
         }).send({
           from: accounts[0],
@@ -172,12 +182,48 @@ function App() {
           if (!err) setTxHash(hash);
         }).on("confirmation", () => {
           return 1;
-        }).then((instance) => {
-          NotificationManager.success("Deployed successfully");
-          setLoading(false);
-          setShow(true);
+        }).then(async(instance) => {
+          const { options } = instance;
+          console.log(options);
+          const encodedConstructorArgs = await getContructorArgs(options.address, activeData.bytecode);
+          const inputJSON = {
+            language: 'Solidity',
+            sources: {
+              "/contracts/token.sol":{
+                content: activeData.content
+              }
+            },
+            settings: {
+              remappings: [],
+              optimizer: { enabled: false, runs: 200 },
+              evmVersion: "istanbul",
+              libraries: {}
+            }
+          }
+          const postQueries = {
+            apikey: "5Z1RRTM3R1VF8U9BS6DVBZZEACU5XUN59Q",
+            module: 'contract',
+            action: 'verifysourcecode',
+            contractaddress: options.address,
+            sourceCode: JSON.stringify(inputJSON),
+            codeformat: 'solidity-standard-json-input',
+            contractname: `/token.sol:MizuchiCommon`,
+            compilerversion: "v0.6.6+commit.6c089d02",
+            constructorArguements: encodedConstructorArgs
+          }
+
+          const { data } = await axios.post(apiURI[Number(chainId)], querystring.stringify(postQueries));
+          if (data.status === "1") {
+            NotificationManager.success("Deployed successfully");
+            setLoading(false);
+            setShow(true);
+          } else {
+            throw Error("Verify failure");
+          }
         }).catch(err => {
-          console.log("ERRR", err);
+          setLoading(false);
+          setShow(false);
+          NotificationManager.warning(err.message);
         })
         setLoading(false);
         } catch(err) {
@@ -188,6 +234,31 @@ function App() {
     }
     else {
       NotificationManager.warning("Metamask is not installed");
+    }
+  }
+
+  const getContructorArgs = async(contractAddress, bytecode) => {
+    let res
+    try {
+      const qs = querystring.stringify({
+        apiKey: "5Z1RRTM3R1VF8U9BS6DVBZZEACU5XUN59Q",
+        module: 'account',
+        action: 'txlist',
+        address: contractAddress,
+        page: 1,
+        sort: 'asc',
+        offset: 1
+      })
+      const url = `https://api-ropsten.etherscan.io/api?${qs}`;
+      res = await axios.get(url)
+    } catch (error) {
+      throw new Error(`Failed to connect to Etherscan API at url https://api-ropsten.etherscan.io/api`)
+    }
+    if (res.data && res.data.status === "1" && res.data.result[0] !== undefined) {
+      const constructorArgs = res.data.result[0].input.substring(bytecode.length)
+      return constructorArgs
+    } else {
+      return ''
     }
   }
 
@@ -268,7 +339,7 @@ function App() {
                   }}
                   required
                 />
-                <small className={`${ maxAmountError ? "text-danger" : "text-dark"}`}>Insert the total suppy precision of your token.</small>
+                <small className={`${ maxAmountError ? "text-danger" : "text-dark"}`}>Insert the total supply precision of your token.</small>
               </div>
 
               <div className="form-group row mt-3">
@@ -449,7 +520,7 @@ function App() {
         </div>
         { show && (
           <Alert variant="success" onClose={() => setShow(false)} dismissible>
-            <p><a href={txScan[chainId] + txHash} _target="blank">{txHash}</a></p>
+            <p><a href={txScan[Number(chainId)] + txHash} _target="blank">{txHash}</a></p>
           </Alert>
         )}
       </div>
