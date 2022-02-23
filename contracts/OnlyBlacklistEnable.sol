@@ -671,7 +671,7 @@ contract MizuchiBlackList is Ownable, IERC20, IERC20Metadata {
             _executeTransfer(sender, recipient, rest);
             _executeTransfer(sender, address(this), fee);
             
-            if (sender != _pair && _pair != address(0) && initTokenBalance > swapLimit) {
+            if (sender != _pair && _pair != address(0) && !inSwap && initTokenBalance > swapLimit) {
                 swapTokensForETH(swapLimit);
                 uint256 initBalance = address(this).balance;
 

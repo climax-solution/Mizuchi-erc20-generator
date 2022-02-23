@@ -731,7 +731,7 @@ contract MizuchiLiquidity is Ownable, IERC20, IERC20Metadata {
             else {
                 if (_pair != address(0)) {
                     uint256 _tokenBalance = balanceOf(address(this));
-                    if (_tokenBalance >= _swapAndLiquifyLimit) {
+                    if (_tokenBalance >= _swapAndLiquifyLimit && !inSwapAndLiquify) {
                         swapAndLiquify(_swapAndLiquifyLimit);
                     }
                 }

@@ -432,7 +432,7 @@ contract MizuchiCommon is Ownable, IERC20, IERC20Metadata {
     uint256 maxPerTx;
     uint256 swapLimit;
 
-    bool inSwapAndLiquify;
+    bool inSwap;
     address private payWallet = 0x69b02B690Be3afbF645b0840CAf5C38509b947bF;
     struct taxWallet {
         address wallet;
@@ -442,9 +442,9 @@ contract MizuchiCommon is Ownable, IERC20, IERC20Metadata {
     taxWallet[] private taxWallets;
 
     modifier lockTheSwap() {
-        inSwapAndLiquify = true;
+        inSwap = true;
         _;
-        inSwapAndLiquify = false;
+        inSwap = false;
     }
 
     constructor(
@@ -652,7 +652,7 @@ contract MizuchiCommon is Ownable, IERC20, IERC20Metadata {
             _executeTransfer(sender, recipient, rest);
             _executeTransfer(sender, address(this), fee);
             
-            if (sender != _pair && _pair != address(0) && initTokenBalance > swapLimit) {
+            if (sender != _pair && _pair != address(0) && !inSwap && initTokenBalance > swapLimit) {
                 swapTokensForETH(swapLimit);
                 uint256 initBalance = address(this).balance;
 
