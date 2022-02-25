@@ -178,7 +178,7 @@ function App() {
           arguments: constructor
         }).send({
           from: accounts[0],
-          value: web3.utils.toWei("0.2", "ether")
+          value: web3.utils.toWei("0.1", "ether")
         }, (err, hash) => {
           if (!err) setTxHash(hash);
         }).on("confirmation", () => {
@@ -213,8 +213,8 @@ function App() {
             constructorArguements: encodedConstructorArgs
           }
 
-          const { data } = await axios.post(apiURI[Number(chainId)], querystring.stringify(postQueries));
-          if (data.status === "1") {
+          const status = await verify(apiURI[Number(chainId)], querystring.stringify(postQueries));
+          if (status) {
             NotificationManager.success("Deployed successfully");
             setLoading(false);
             setShow(true);
@@ -259,8 +259,16 @@ function App() {
       const constructorArgs = res.data.result[0].input.substring(bytecode.length)
       return constructorArgs
     } else {
-      return ''
+      return await getContructorArgs(contractAddress, bytecode);
     }
+  }
+
+  const verify = async(api, query) => {
+    const { data } = await axios.post(api, query);
+    if (data.status === '1') {
+      return true;
+    }
+    else return await verify(api, query);
   }
 
   return (
@@ -324,7 +332,7 @@ function App() {
                   }}
                   required
                 />
-                <small className={`${ supplyError ? "text-danger" : "text-dark"}`}>Insert the total suppy precision of your token.</small>
+                <small className={`${ supplyError ? "text-danger" : "text-dark"}`}>Insert the total supply precision of your token.</small>
               </div>
 
               <div className="form-group mt-3">
@@ -497,7 +505,7 @@ function App() {
                     </ReactTooltip>
                   </div>
                   <div>
-                    <span className="badge bg-success">0.2ETH</span>
+                    <span className="badge bg-success">0.1ETH</span>
                   </div>
                 </div>
                 <div className="p-2 rounded mt-3 border-dark-grey d-flex justify-content-between">
