@@ -187,13 +187,9 @@ function App() {
           const { options } = instance;
           console.log(options);
           const encodedConstructorArgs = await getContructorArgs(options.address, activeData.bytecode);
-          const inputJSON = {
+          let inputJSON = {
             language: 'Solidity',
-            sources: {
-              "/contracts/token.sol":{
-                content: activeData.content
-              }
-            },
+            sources: {},
             settings: {
               remappings: [],
               optimizer: { enabled: false, runs: 200 },
@@ -201,6 +197,11 @@ function App() {
               libraries: {}
             }
           }
+
+          inputJSON["sources"][`/contracts/${activeData.path}.sol`] = {
+            content: activeData.content
+          }
+          
           const postQueries = {
             apikey: api_verify,
             module: 'contract',
@@ -208,7 +209,7 @@ function App() {
             contractaddress: options.address,
             sourceCode: JSON.stringify(inputJSON),
             codeformat: 'solidity-standard-json-input',
-            contractname: `/token.sol:${activeData.contractName}`,
+            contractname: `/contracts/${activeData.path}.sol:${activeData.contractName}`,
             compilerversion: compilerVersion,
             constructorArguements: encodedConstructorArgs
           }
