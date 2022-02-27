@@ -201,7 +201,7 @@ function App() {
           inputJSON["sources"][`/contracts/${activeData.path}.sol`] = {
             content: activeData.content
           }
-          
+
           const postQueries = {
             apikey: api_verify,
             module: 'contract',
@@ -530,7 +530,7 @@ function App() {
         </div>
         { show && (
           <Alert variant="success" onClose={() => setShow(false)} dismissible>
-            <p><a href={txScan[Number(chainId)] + txHash} _target="blank">{txHash}</a></p>
+            <p className="text-center">Please check tx hash. <a href={txScan[Number(chainId)] + txHash} _target="blank">{txHash}</a></p>
           </Alert>
         )}
       </div>
